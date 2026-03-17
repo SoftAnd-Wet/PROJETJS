@@ -1,0 +1,270 @@
+<div class="mise-en-page" [class.sidebar-reduite]="sidebarReduite">
+
+  <!--  Sidebar — composant séparé -->
+  <app-sidebar
+    [itemActif]="pageActive"
+    [reduit]="sidebarReduite"
+    (navigationChange)="pageActive = $event"
+    (reduitChange)="sidebarReduite = $event">
+  </app-sidebar>
+
+  <!-- ══════════════ CONTENU PRINCIPAL ══════════════ -->
+  <div class="contenu-principal">
+
+    <!-- ── BARRE SUPÉRIEURE ── -->
+    <header class="barre-superieure">
+      <div class="champ-recherche">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <input type="text" placeholder="Rechercher des sessions, matières..." [(ngModel)]="recherche"/>
+      </div>
+      <div class="actions-barre">
+        <button class="btn-icone btn-notif">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="2"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          <span class="point-notif"></span>
+        </button>
+        <div class="enveloppe-avatar">
+          <img src="https://i.pravatar.cc/40?img=5" alt="Utilisateur" class="avatar"/>
+        </div>
+      </div>
+    </header>
+
+    <!-- ══ CORPS DE PAGE ══ -->
+    <div class="corps-page">
+
+      <!-- ───────────────────────────────
+           1. CARTES STATISTIQUES PRINCIPALES
+           ─────────────────────────────── -->
+      <div class="grille-cartes">
+
+        <!-- Carte 1 : Violet (Temps d'étude) -->
+        <div class="carte carte-violet">
+          <div class="carte-entete">
+            <div class="carte-icone">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+                <polyline points="12 7 12 12 15 15" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <button class="btn-menu">···</button>
+          </div>
+          <div class="carte-valeur">{{ tempsEtudeAujourdhui }}</div>
+          <div class="carte-libelle">Temps d'étude aujourd'hui</div>
+          <div class="carte-tendance">↗ +12% par rapport à hier</div>
+        </div>
+
+        <!-- Carte 2 : Bleu (Sessions) -->
+        <div class="carte carte-bleu">
+          <div class="carte-entete">
+            <div class="onglets-carte">
+              <span class="onglet actif">Aujourd'hui</span>
+              <span class="onglet">Semaine</span>
+            </div>
+          </div>
+          <div class="carte-valeur">
+            {{ sessionsAujourdhui }}
+            <span class="unite">sessions</span>
+          </div>
+          <div class="carte-libelle">Sessions aujourd'hui</div>
+          <div class="mini-graphique">
+            <svg viewBox="0 0 100 40" preserveAspectRatio="none">
+              <polyline points="0,35 15,28 30,30 45,18 60,22 75,10 90,14 100,8"
+                        fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Carte 3 : Claire (Progression hebdo) -->
+        <div class="carte carte-claire">
+          <div class="rangee-mini">
+            <div class="mini-icone icone-bleu">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"
+                          stroke="currentColor" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="mini-contenu">
+              <div class="mini-valeur">{{ progressionHebdo }}%</div>
+              <div class="mini-libelle">Progression hebdomadaire</div>
+            </div>
+          </div>
+          <div class="barre-progres-fond">
+            <div class="barre-progres" [style.width]="progressionHebdo + '%'"></div>
+          </div>
+        </div>
+
+        <!-- Carte 4 : Claire (Total heures) -->
+        <div class="carte carte-claire">
+          <div class="rangee-mini">
+            <div class="mini-icone icone-orange">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M18 20V4"  stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M6 20v-4"  stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="mini-contenu">
+              <div class="mini-valeur">{{ totalHeuresSemaine }}h</div>
+              <div class="mini-libelle">Total heures / Semaine</div>
+            </div>
+          </div>
+          <div class="barre-progres-fond orange">
+            <div class="barre-progres" [style.width]="(totalHeuresSemaine / 40 * 100) + '%'"></div>
+          </div>
+        </div>
+
+      </div><!-- /grille-cartes -->
+
+      <!-- ───────────────────────────────
+           2. SECTION MILIEU :
+              Graphique + Matières
+           ─────────────────────────────── -->
+      <div class="section-milieu">
+
+        <!-- Graphique productivité -->
+        <div class="carte-graphique">
+          <div class="graphique-entete">
+            <div>
+              <h3 class="titre-section">Productivité d'étude</h3>
+              <div class="total-graphique">
+                {{ totalHeuresSemaine }}h <span>cette semaine</span>
+              </div>
+            </div>
+            <select class="selecteur-periode" [(ngModel)]="periodeSel">
+              <option>Semaine</option>
+              <option>Mois</option>
+              <option>Année</option>
+            </select>
+          </div>
+
+          <!-- Barres empilées (style Berry) -->
+          <div class="graphique-barres">
+            <div class="axe-y">
+              <span>8h</span>
+              <span>6h</span>
+              <span>4h</span>
+              <span>2h</span>
+              <span>0</span>
+            </div>
+            <div class="zone-barres">
+              <div class="groupe-barre" *ngFor="let j of donneesSemaine">
+                <div class="pile-barre">
+                  <div class="segment seg-violet"
+                       [style.height.px]="j.concentration * 14"
+                       [title]="'Concentration : ' + j.concentration + 'h'"></div>
+                  <div class="segment seg-bleu"
+                       [style.height.px]="j.revision * 14"
+                       [title]="'Révision : ' + j.revision + 'h'"></div>
+                  <div class="segment seg-clair"
+                       [style.height.px]="j.lecture * 14"
+                       [title]="'Lecture : ' + j.lecture + 'h'"></div>
+                </div>
+                <span class="libelle-barre">{{ j.jour }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="legende-graphique">
+            <span class="point-legende violet"></span><span>Concentration</span>
+            <span class="point-legende bleu"></span><span>Révision</span>
+            <span class="point-legende clair"></span><span>Lecture</span>
+          </div>
+        </div>
+
+        <!-- Progression par matière -->
+        <div class="carte-matieres">
+          <h3 class="titre-section">Progression par matière</h3>
+          <ul class="liste-matieres">
+            <li class="item-matiere" *ngFor="let m of matieres">
+              <div class="matiere-entete">
+                <div class="point-matiere" [style.background]="m.couleur"></div>
+                <span class="nom-matiere">{{ m.nom }}</span>
+                <span class="temps-matiere">{{ m.heures }}</span>
+                <span class="tendance-matiere"
+                      [class.hausse]="m.tendance > 0"
+                      [class.baisse]="m.tendance < 0">
+                  {{ m.tendance > 0 ? '↑' : '↓' }}
+                </span>
+              </div>
+              <div class="barre-matiere-fond">
+                <div class="barre-matiere-remplissage"
+                     [style.width]="m.pct + '%'"
+                     [style.background]="m.couleur"></div>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+      </div><!-- /section-milieu -->
+
+      <!-- ───────────────────────────────
+           3. SECTION BAS :
+              Sessions du jour + Série
+           ─────────────────────────────── -->
+      <div class="section-bas">
+
+        <!-- Tableau sessions du jour -->
+        <div class="carte-sessions">
+          <div class="entete-section">
+            <h3 class="titre-section">Sessions du jour</h3>
+            <button class="btn-voir-tout">Voir tout →</button>
+          </div>
+          <table class="tableau-sessions">
+            <thead>
+              <tr>
+                <th>Matière</th>
+                <th>Heure</th>
+                <th>Durée</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of sessionsJour">
+                <td>
+                  <div class="matiere-session">
+                    <div class="point-session" [style.background]="s.couleur"></div>
+                    {{ s.matiere }}
+                  </div>
+                </td>
+                <td class="heure-session">{{ s.heure }}</td>
+                <td class="duree-session">{{ s.duree }}</td>
+                <td>
+                  <span class="badge-statut" [class]="s.statut">
+                    {{ s.libelleStatut }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Carte série d'étude -->
+        <div class="carte-serie">
+          <h3 class="titre-section">Série d'étude 🔥</h3>
+          <div class="nombre-serie">{{ serie }} jours</div>
+          <p class="sous-titre-serie">Continuez ! Record : {{ meilleuresSerie }} jours</p>
+          <div class="grille-serie">
+            <div class="jour-serie"
+                 *ngFor="let j of joursSerie"
+                 [class.actif]="j.actif"
+                 [class.aujourdhui]="j.aujourdhui"
+                 [title]="j.libelle">
+            </div>
+          </div>
+          <div class="pied-serie">
+            <span>Lun</span><span>Mar</span><span>Mer</span>
+            <span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
+          </div>
+        </div>
+
+      </div><!-- /section-bas -->
+
+    </div><!-- /corps-page -->
+  </div><!-- /contenu-principal -->
+</div><!-- /mise-en-page -->

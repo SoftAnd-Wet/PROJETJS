@@ -1,0 +1,344 @@
+/* ── Hôte transparent — pas de display:block qui crée un gap ── */
+:host {
+  display: contents;
+}
+
+/* ── Coque principale : fixed pour coller au bord gauche ── */
+.sidebar {
+  width: 240px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
+  background: #ffffff;
+  border-right: 1px solid #e8eaf0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.22s ease;
+  box-shadow: 2px 0 20px rgba(94, 53, 177, 0.08);
+}
+
+/* ── Mode réduit ── */
+.sidebar.reduit {
+  width: 68px;
+}
+
+.sidebar.reduit .logo-texte,
+.sidebar.reduit .texte-nav,
+.sidebar.reduit .libelle-groupe,
+.sidebar.reduit .badge-nav,
+.sidebar.reduit .zone-upgrade,
+.sidebar.reduit .info-utilisateur,
+.sidebar.reduit .btn-deconnexion {
+  display: none;
+}
+
+.sidebar.reduit .item-nav {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.sidebar.reduit .logo {
+  justify-content: center;
+}
+
+.sidebar.reduit .sidebar-entete {
+  justify-content: center;
+  padding: 18px 0 14px;
+}
+
+.sidebar.reduit .pied-utilisateur {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+/* ── En-tête ── */
+.sidebar-entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid #e8eaf0;
+  flex-shrink: 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.logo-icone {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #5e35b1 0%, #7c4dff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(94, 53, 177, 0.45);
+}
+
+.logo-texte {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1a1a2e;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+.btn-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.18s, color 0.18s;
+}
+
+.btn-toggle:hover {
+  background: #ede7f6;
+  color: #5e35b1;
+}
+
+/* ── Navigation ── */
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 10px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: #e8eaf0;
+  border-radius: 99px;
+}
+
+.groupe-nav {
+  margin-bottom: 6px;
+}
+
+.libelle-groupe {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.1px;
+  color: #6b7280;
+  padding: 8px 10px 4px;
+  white-space: nowrap;
+}
+
+.item-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: all 0.18s ease;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+}
+
+.item-nav:hover {
+  background: #ede7f6;
+  color: #5e35b1;
+}
+
+.item-nav.actif {
+  background: #ede7f6;
+  color: #5e35b1;
+  font-weight: 700;
+}
+
+.item-nav.actif::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  bottom: 15%;
+  width: 3px;
+  background: #5e35b1;
+  border-radius: 0 3px 3px 0;
+}
+
+.item-nav.actif .icone-nav {
+  color: #5e35b1;
+}
+
+.icone-nav {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.18s;
+}
+
+.texte-nav {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge-nav {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: #5e35b1;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  line-height: 1.5;
+}
+
+.badge-nav.nouveau {
+  background: linear-gradient(135deg, #00c853, #00e676);
+  box-shadow: 0 2px 6px rgba(0, 200, 83, 0.4);
+}
+
+/* ── Carte Upgrade ── */
+.zone-upgrade {
+  padding: 10px 12px;
+  flex-shrink: 0;
+}
+
+.carte-upgrade {
+  position: relative;
+  background: linear-gradient(135deg, #5e35b1 0%, #7c4dff 100%);
+  border-radius: 14px;
+  padding: 18px 14px;
+  color: #ffffff;
+  text-align: center;
+  overflow: hidden;
+}
+
+.upgrade-lueur {
+  position: absolute;
+  top: -24px;
+  right: -24px;
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.13);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.upgrade-emoji {
+  font-size: 26px;
+  margin-bottom: 6px;
+}
+
+.upgrade-titre {
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 5px;
+}
+
+.upgrade-desc {
+  font-size: 11px;
+  opacity: 0.85;
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+.upgrade-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.upgrade-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Pied utilisateur ── */
+.pied-utilisateur {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-top: 1px solid #e8eaf0;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.avatar-utilisateur {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #5e35b1;
+  flex-shrink: 0;
+}
+
+.info-utilisateur {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.nom-utilisateur {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.role-utilisateur {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.btn-deconnexion {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.18s, color 0.18s;
+}
+
+.btn-deconnexion:hover {
+  background: rgba(244, 67, 54, 0.08);
+  color: #f44336;
+}

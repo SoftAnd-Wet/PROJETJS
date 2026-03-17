@@ -1,0 +1,321 @@
+<div class="mise-en-page" [class.sidebar-reduite]="sidebarReduite">
+
+  <app-sidebar
+    [itemActif]="'statistiques'"
+    [reduit]="sidebarReduite"
+    (navigationChange)="pageActive = $event"
+    (reduitChange)="sidebarReduite = $event">
+  </app-sidebar>
+
+  <div class="contenu-principal">
+
+    <!-- BARRE SUPERIEURE -->
+    <header class="barre-superieure">
+      <div class="barre-titre">
+        <h1 class="titre-page">Statistiques</h1>
+        <span class="sous-titre-page">Analysez votre productivité et votre progression</span>
+      </div>
+      <div class="actions-barre">
+        <div class="enveloppe-avatar">
+          <img src="https://i.pravatar.cc/40?img=5" alt="User" class="avatar"/>
+        </div>
+      </div>
+    </header>
+
+    <div class="corps-page">
+
+      <!-- ═══════════════════════════════════════
+           1. TEMPS TOTAL ÉTUDIÉ  (indicateurs)
+           ════════════════════════════════════ -->
+      <div class="section-carte">
+        <div class="section-entete">
+          <div class="section-icone violet">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+              <polyline points="12 7 12 12 15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="section-titre">Temps total étudié</h2>
+            <p class="section-desc">Vue d'ensemble de votre activité</p>
+          </div>
+        </div>
+
+        <div class="grille-temps">
+
+          <div class="carte-temps violet">
+            <div class="temps-icone">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+                <polyline points="12 7 12 12 15 15" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="temps-valeur">{{ tempsAujourdhui }}</div>
+            <div class="temps-libelle">Aujourd'hui</div>
+          </div>
+
+          <div class="carte-temps bleu">
+            <div class="temps-icone">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="4" width="18" height="18" rx="2" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+                <line x1="3" y1="10" x2="21" y2="10" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+              </svg>
+            </div>
+            <div class="temps-valeur">{{ tempsSemaine }}</div>
+            <div class="temps-libelle">Cette semaine</div>
+          </div>
+
+          <div class="carte-temps vert">
+            <div class="temps-icone">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="temps-valeur">{{ tempsMois }}</div>
+            <div class="temps-libelle">Ce mois</div>
+          </div>
+
+          <div class="carte-temps claire">
+            <div class="temps-valeur sombre">{{ totalHeuresSemaine }}h</div>
+            <div class="temps-libelle">Total semaine (calculé)</div>
+            <div class="barre-fond" style="margin-top:12px">
+              <div class="barre-fill" [style.width]="(totalHeuresSemaine / 40 * 100) + '%'"></div>
+            </div>
+            <div class="barre-detail">Objectif : 40h / semaine</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════
+           2. PROGRESSION PAR MATIÈRE  +
+           3. SESSIONS PRÉVUES VS RÉALISÉES
+           ════════════════════════════════════ -->
+      <div class="section-double">
+
+        <!-- 2. Progression par matière (bar chart horizontal) -->
+        <div class="section-carte">
+          <div class="section-entete">
+            <div class="section-icone violet">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </div>
+            <div>
+              <h2 class="section-titre">Progression par matière</h2>
+              <p class="section-desc">Heures étudiées vs objectif hebdomadaire</p>
+            </div>
+          </div>
+
+          <!-- Graphique bar chart horizontal -->
+          <div class="chart-horizontal">
+            <div class="ch-ligne" *ngFor="let m of progressionMatieres">
+              <div class="ch-label">
+                <div class="ch-dot" [style.background]="m.couleur"></div>
+                <span class="ch-nom">{{ m.nom }}</span>
+              </div>
+              <div class="ch-barre-wrap">
+                <div class="ch-barre-fond">
+                  <div class="ch-barre-fill"
+                       [style.width]="m.pct + '%'"
+                       [style.background]="m.couleur">
+                  </div>
+                </div>
+                <span class="ch-pct">{{ m.pct }}%</span>
+              </div>
+              <div class="ch-heures">{{ m.heures }}h / {{ m.objectif }}h</div>
+            </div>
+          </div>
+
+          <!-- Tableau récapitulatif -->
+          <table class="tableau-stats" style="margin-top:20px">
+            <thead>
+              <tr>
+                <th>Matière</th>
+                <th class="centre">Temps étudié</th>
+                <th class="centre">Objectif</th>
+                <th class="centre">Progression</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of progressionMatieres">
+                <td>
+                  <div class="td-matiere">
+                    <div class="td-dot" [style.background]="m.couleur"></div>
+                    {{ m.nom }}
+                  </div>
+                </td>
+                <td class="centre bold" [style.color]="m.couleur">{{ m.heures }}h</td>
+                <td class="centre gris">{{ m.objectif }}h</td>
+                <td class="centre">
+                  <span class="badge-pct"
+                        [class.haut]="m.pct >= 75"
+                        [class.moyen]="m.pct >= 50 && m.pct < 75"
+                        [class.bas]="m.pct < 50">
+                    {{ m.pct }}%
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 3. Sessions prévues vs réalisées -->
+        <div class="section-carte">
+          <div class="section-entete">
+            <div class="section-icone bleu">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <h2 class="section-titre">Sessions prévues vs réalisées</h2>
+              <p class="section-desc">Comparaison par matière</p>
+            </div>
+          </div>
+
+          <!-- Indicateur global -->
+          <div class="indicateur-global">
+            <div class="ig-item">
+              <div class="ig-valeur violet">{{ totalPrevues }}</div>
+              <div class="ig-label">Prévues</div>
+            </div>
+            <div class="ig-vs">VS</div>
+            <div class="ig-item">
+              <div class="ig-valeur bleu">{{ totalRealisees }}</div>
+              <div class="ig-label">Réalisées</div>
+            </div>
+            <div class="ig-taux">
+              <div class="ig-taux-val">{{ tauxGlobal }}%</div>
+              <div class="ig-label">Taux global</div>
+            </div>
+          </div>
+
+          <!-- Barre globale -->
+          <div class="barre-fond" style="margin-bottom:20px">
+            <div class="barre-fill" [style.width]="tauxGlobal + '%'"></div>
+          </div>
+
+          <!-- Tableau comparaison -->
+          <table class="tableau-stats">
+            <thead>
+              <tr>
+                <th>Matière</th>
+                <th class="centre">Prévues</th>
+                <th class="centre">Réalisées</th>
+                <th class="centre">Taux</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of comparaisonSessions">
+                <td>
+                  <div class="td-matiere">
+                    <div class="td-dot" [style.background]="s.couleur"></div>
+                    {{ s.matiere }}
+                  </div>
+                </td>
+                <td class="centre">{{ s.prevues }}</td>
+                <td class="centre bold" [style.color]="s.couleur">{{ s.realisees }}</td>
+                <td class="centre">
+                  <div class="mini-barre-wrap">
+                    <div class="mini-barre-fond">
+                      <div class="mini-barre-fill"
+                           [style.width]="(s.realisees / s.prevues * 100) + '%'"
+                           [style.background]="s.couleur">
+                      </div>
+                    </div>
+                    <span class="mini-pct">{{ (s.realisees / s.prevues * 100) | number:'1.0-0' }}%</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- ═══════════════════════════════════════
+           4. PRODUCTIVITÉ HEBDOMADAIRE
+              (bar chart vertical + tableau)
+           ════════════════════════════════════ -->
+      <div class="section-carte">
+        <div class="section-entete">
+          <div class="section-icone vert">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <line x1="18" y1="20" x2="18" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="12" y1="20" x2="12" y2="4"  stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="6"  y1="20" x2="6"  y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="section-titre">Productivité hebdomadaire</h2>
+            <p class="section-desc">Heures étudiées par jour · Total : {{ formatH(totalHeuresSemaine) }}</p>
+          </div>
+        </div>
+
+        <div class="section-double-bas">
+
+          <!-- Bar chart vertical -->
+          <div class="bar-chart-v">
+            <div class="bcv-axe-y">
+              <span>4h</span><span>3h</span><span>2h</span><span>1h</span><span>0</span>
+            </div>
+            <div class="bcv-zone">
+              <div class="bcv-grille">
+                <div class="bcv-ligne-h" *ngFor="let _ of [1,2,3,4]"></div>
+              </div>
+              <div class="bcv-barres">
+                <div class="bcv-groupe" *ngFor="let j of productiviteHebdo">
+                  <div class="bcv-barre"
+                       [style.height.%]="(j.heures / 4) * 100"
+                       [title]="j.jour + ' : ' + j.heures + 'h'">
+                  </div>
+                  <div class="bcv-valeur">{{ formatH(j.heures) }}</div>
+                  <div class="bcv-jour">{{ j.jour.slice(0,3) }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tableau productivité -->
+          <table class="tableau-stats">
+            <thead>
+              <tr>
+                <th>Jour</th>
+                <th class="centre">Temps étudié</th>
+                <th>Progression</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let j of productiviteHebdo">
+                <td class="bold-jour">{{ j.jour }}</td>
+                <td class="centre bold violet">{{ formatH(j.heures) }}</td>
+                <td>
+                  <div class="mini-barre-wrap">
+                    <div class="mini-barre-fond">
+                      <div class="mini-barre-fill"
+                           [style.width]="j.pct + '%'"
+                           style="background: #5e35b1">
+                      </div>
+                    </div>
+                    <span class="mini-pct">{{ j.pct }}%</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="tr-total">
+                <td class="bold-jour">Total</td>
+                <td class="centre bold violet">{{ formatH(totalHeuresSemaine) }}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+
+        </div>
+      </div>
+
+    </div><!-- /corps-page -->
+  </div><!-- /contenu-principal -->
+</div>

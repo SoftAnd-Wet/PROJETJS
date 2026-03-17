@@ -1,0 +1,359 @@
+<div class="mise-en-page" [class.sidebar-reduite]="sidebarReduite">
+
+  <!-- Sidebar séparée -->
+  <app-sidebar
+    [itemActif]="'planificateur'"
+    [reduit]="sidebarReduite"
+    (navigationChange)="pageActive = $event"
+    (reduitChange)="sidebarReduite = $event">
+  </app-sidebar>
+
+  <div class="contenu-principal">
+
+    <!-- ── BARRE SUPÉRIEURE ── -->
+    <header class="barre-superieure">
+      <div class="barre-titre">
+        <h1 class="titre-page">Planificateur</h1>
+        <span class="sous-titre-page">Gérez vos matières, disponibilités et générez votre planning</span>
+      </div>
+      <div class="actions-barre">
+        <button class="btn-icone btn-notif">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="2"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          <span class="point-notif"></span>
+        </button>
+        <div class="enveloppe-avatar">
+          <img src="https://i.pravatar.cc/40?img=5" alt="Utilisateur" class="avatar"/>
+        </div>
+      </div>
+    </header>
+
+    <!-- ══ CORPS ══ -->
+    <div class="corps-page">
+
+      <!-- ════════════════════════════════
+           SECTION 1 — MATIÈRES & OBJECTIFS
+           ════════════════════════════════ -->
+      <div class="section-carte">
+        <div class="section-entete">
+          <div class="section-icone violet">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="section-titre">Matières et objectifs</h2>
+            <p class="section-desc">Définissez vos matières et le temps d'étude hebdomadaire souhaité</p>
+          </div>
+        </div>
+
+        <!-- Tableau des matières -->
+        <div class="tableau-matieres">
+          <div class="tableau-entete">
+            <span>Matière</span>
+            <span>Objectif hebdomadaire</span>
+            <span>Priorité</span>
+            <span>Couleur</span>
+            <span>Actions</span>
+          </div>
+          <div class="tableau-corps">
+            <div class="tableau-ligne" *ngFor="let m of matieres; let i = index">
+              <div class="cellule-matiere">
+                <div class="point-couleur" [style.background]="m.couleur"></div>
+                <span class="nom-matiere">{{ m.nom }}</span>
+              </div>
+              <div class="cellule-objectif">
+                <div class="badge-heures">{{ m.objectifHeures }}h / semaine</div>
+              </div>
+              <div class="cellule-priorite">
+                <span class="badge-priorite" [class]="'priorite-' + m.priorite">
+                  {{ libellePriorite(m.priorite) }}
+                </span>
+              </div>
+              <div class="cellule-couleur">
+                <div class="apercu-couleur" [style.background]="m.couleur"></div>
+              </div>
+              <div class="cellule-actions">
+                <button class="btn-action modifier" (click)="modifierMatiere(i)" title="Modifier">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </button>
+                <button class="btn-action supprimer" (click)="supprimerMatiere(i)" title="Supprimer">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulaire ajout matière -->
+        <div class="formulaire-ajout" [class.ouvert]="formulaireMatiereOuvert">
+          <div class="formulaire-titre">
+            <span>{{ matiereEnEdition >= 0 ? 'Modifier la matière' : 'Ajouter une matière' }}</span>
+            <button class="btn-fermer" (click)="fermerFormulaireMatiere()">✕</button>
+          </div>
+          <div class="formulaire-grille">
+            <div class="champ-groupe">
+              <label>Nom de la matière</label>
+              <input type="text" [(ngModel)]="nouvelleMatiere.nom" placeholder="ex: Mathématiques" class="champ-input"/>
+            </div>
+            <div class="champ-groupe">
+              <label>Objectif hebdomadaire (heures)</label>
+              <input type="number" [(ngModel)]="nouvelleMatiere.objectifHeures" min="1" max="40" class="champ-input"/>
+            </div>
+            <div class="champ-groupe">
+              <label>Priorité</label>
+              <select [(ngModel)]="nouvelleMatiere.priorite" class="champ-select">
+                <option value="haute">Haute</option>
+                <option value="moyenne">Moyenne</option>
+                <option value="basse">Basse</option>
+              </select>
+            </div>
+            <div class="champ-groupe">
+              <label>Couleur</label>
+              <div class="palette-couleurs">
+                <div class="couleur-option"
+                     *ngFor="let c of couleursDisponibles"
+                     [style.background]="c"
+                     [class.selectionne]="nouvelleMatiere.couleur === c"
+                     (click)="nouvelleMatiere.couleur = c">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="erreur-formulaire" *ngIf="erreurFormulaire">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+              <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            {{ erreurFormulaire }}
+          </div>
+          <div class="formulaire-actions">
+            <button class="btn-annuler" (click)="fermerFormulaireMatiere()">Annuler</button>
+            <button class="btn-confirmer" (click)="sauvegarderMatiere()">
+              {{ matiereEnEdition >= 0 ? 'Modifier' : 'Ajouter' }}
+            </button>
+          </div>
+        </div>
+
+        <button class="btn-ajouter" (click)="ouvrirFormulaireMatiere()" *ngIf="!formulaireMatiereOuvert">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Ajouter une matière
+        </button>
+      </div>
+
+      <!-- ════════════════════════════════
+           SECTION 2 — DISPONIBILITÉS
+           ════════════════════════════════ -->
+      <div class="section-carte">
+        <div class="section-entete">
+          <div class="section-icone bleu">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+              <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="section-titre">Disponibilités</h2>
+            <p class="section-desc">Indiquez vos créneaux horaires disponibles pour étudier</p>
+          </div>
+        </div>
+
+        <!-- Grille des jours -->
+        <div class="grille-disponibilites">
+          <div class="carte-jour" *ngFor="let dispo of disponibilites">
+            <div class="jour-entete">
+              <div class="jour-nom">{{ dispo.jour }}</div>
+              <label class="toggle-switch">
+                <input type="checkbox" [(ngModel)]="dispo.actif"/>
+                <span class="toggle-curseur"></span>
+              </label>
+            </div>
+            <div class="jour-creneaux" *ngIf="dispo.actif">
+              <ng-container *ngFor="let cr of dispo.creneaux; let j = index">
+                <div class="creneau-ligne">
+                  <div class="creneau-inputs">
+                    <input type="time" [(ngModel)]="cr.debut" class="champ-heure"
+                           (change)="validerCreneau(dispo, j)"/>
+                    <span class="separateur-heure">—</span>
+                    <input type="time" [(ngModel)]="cr.fin" class="champ-heure"
+                           (change)="validerCreneau(dispo, j)"/>
+                  </div>
+                  <button class="btn-suppr-creneau" (click)="supprimerCreneau(dispo, j)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                      <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="erreur-creneau" *ngIf="getErreurCreneau(dispo.jour, j)">
+                  ⚠ {{ getErreurCreneau(dispo.jour, j) }}
+                </div>
+              </ng-container>
+              <button class="btn-ajouter-creneau" (click)="ajouterCreneau(dispo)">
+                + Ajouter un créneau
+              </button>
+            </div>
+            <div class="jour-inactif" *ngIf="!dispo.actif">
+              <span>Non disponible</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════
+           SECTION 3 — GÉNÉRATION
+           ════════════════════════════════ -->
+      <div class="section-carte section-generation">
+        <div class="generation-contenu">
+          <div class="generation-icone">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="generation-texte">
+            <h2 class="generation-titre">Générer le planning</h2>
+            <p class="generation-desc">
+              L'algorithme répartit automatiquement vos sessions selon les priorités,
+              les disponibilités et la durée maximale par session.
+            </p>
+            <div class="generation-regles">
+              <div class="regle">
+                <span class="regle-icone">✓</span> Pas de chevauchement
+              </div>
+              <div class="regle">
+                <span class="regle-icone">✓</span> Matières prioritaires d'abord
+              </div>
+              <div class="regle">
+                <span class="regle-icone">✓</span> Durée maximale : {{ dureeMaxSession }}h / session
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="generation-options">
+          <div class="option-groupe">
+            <label>Durée max. par session (h)</label>
+            <input type="number" [(ngModel)]="dureeMaxSession" min="0.5" max="4" step="0.5" class="champ-input petit"/>
+          </div>
+          <button class="btn-generer" (click)="genererPlanning()" [class.chargement]="enGeneration">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" *ngIf="!enGeneration">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="spinner" *ngIf="enGeneration"></span>
+            {{ enGeneration ? 'Génération...' : 'Générer le planning' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════
+           SECTION 4 — RÉSULTAT DU PLANNING
+           ════════════════════════════════ -->
+      <div class="section-carte" *ngIf="planningGenere.length > 0">
+        <div class="section-entete">
+          <div class="section-icone vert">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="section-titre">Planning généré</h2>
+            <p class="section-desc">{{ totalSessionsGenerees }} sessions planifiées sur la semaine</p>
+          </div>
+          <div class="vue-toggle">
+            <button class="btn-vue" [class.actif]="vueCalendrier" (click)="vueCalendrier = true" title="Vue calendrier">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>
+                <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button class="btn-vue" [class.actif]="!vueCalendrier" (click)="vueCalendrier = false" title="Vue liste">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <line x1="8" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="8" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="8" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="3" y1="6" x2="3.01" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="3" y1="12" x2="3.01" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="3" y1="18" x2="3.01" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- VUE CALENDRIER -->
+        <div class="vue-calendrier" *ngIf="vueCalendrier">
+          <div class="calendrier-grille">
+            <div class="col-jour" *ngFor="let jour of planningGenere">
+              <div class="col-jour-entete">{{ jour.jour }}</div>
+              <div class="col-jour-corps">
+                <div class="session-bloc"
+                     *ngFor="let s of jour.sessions"
+                     [style.border-left-color]="s.couleur"
+                     [style.background]="s.couleur + '18'">
+                  <div class="session-heure">{{ s.debut }} - {{ s.fin }}</div>
+                  <div class="session-nom" [style.color]="s.couleur">{{ s.matiere }}</div>
+                  <div class="session-duree">{{ s.duree }}</div>
+                </div>
+                <div class="col-vide" *ngIf="jour.sessions.length === 0">
+                  <span>Libre</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VUE LISTE -->
+        <div class="vue-liste" *ngIf="!vueCalendrier">
+          <div class="liste-jour" *ngFor="let jour of planningGenere">
+            <div class="liste-jour-entete" *ngIf="jour.sessions.length > 0">
+              <span class="liste-jour-nom">{{ jour.jour }}</span>
+              <span class="liste-jour-total">{{ jour.sessions.length }} session(s)</span>
+            </div>
+            <div class="liste-session"
+                 *ngFor="let s of jour.sessions"
+                 [style.border-left-color]="s.couleur">
+              <div class="liste-heure">{{ s.debut }}</div>
+              <div class="liste-separateur" [style.background]="s.couleur"></div>
+              <div class="liste-info">
+                <span class="liste-matiere" [style.color]="s.couleur">{{ s.matiere }}</span>
+                <span class="liste-fin">jusqu'à {{ s.fin }} · {{ s.duree }}</span>
+              </div>
+              <span class="badge-priorite" [class]="'priorite-' + s.priorite">
+                {{ libellePriorite(s.priorite) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions export -->
+        <div class="planning-actions">
+          <button class="btn-regenerer" (click)="genererPlanning()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <polyline points="23 4 23 10 17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Regénérer
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /corps-page -->
+  </div><!-- /contenu-principal -->
+</div><!-- /mise-en-page -->
