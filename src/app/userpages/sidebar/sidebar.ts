@@ -1,42 +1,42 @@
 import { Component, Input, Output, EventEmitter, OnInit, inject } from '@angular/core';
-import { CommonModule }          from '@angular/common';
-import { Router, RouterModule }  from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
+import { UserService } from '../../services/user.service';
+import { DashboardService } from '../../services/dashboard.service';
 
 export interface ItemNav {
-  id:           string;
-  libelle:      string;
-  route:        string;
-  badge?:       string | number;
+  id: string;
+  libelle: string;
+  route: string;
+  badge?: string | number;
   badgeClasse?: string;
 }
 
 export interface GroupeNav {
   libelle: string;
-  items:   ItemNav[];
+  items: ItemNav[];
 }
 
 @Component({
-  selector:    'app-sidebar',
-  standalone:  true,
-  imports:     [CommonModule, RouterModule],
+  selector: 'app-sidebar',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
   templateUrl: './sidebar.html',
-  styleUrls:   ['./sidebar.css']
+  styleUrls: ['./sidebar.css']
 })
 export class SidebarComponent implements OnInit {
 
-  /* ── Injection moderne (pas de constructeur) ── */
   private router = inject(Router);
+  private userService = inject(UserService);
+  private dashboardService = inject(DashboardService);
 
-  /* ── Entrées / Sorties ── */
-  @Input()  itemActif = 'tableau-de-bord';
-  @Input()  reduit    = false;
+  @Input() itemActif = 'tableau-de-bord';
+  @Input() reduit = false;
   @Output() navigationChange = new EventEmitter<string>();
-  @Output() reduitChange     = new EventEmitter<boolean>();
+  @Output() reduitChange = new EventEmitter<boolean>();
 
-  /* ── Données dynamiques ── */
-  sessionsAujourdhui = 3;
+  sessionsAujourdhui = 0;
 
-  /* ── Structure de navigation ── */
   readonly groupes: GroupeNav[] = [
     {
       libelle: 'Tableau de bord',
@@ -48,13 +48,13 @@ export class SidebarComponent implements OnInit {
       libelle: 'Planification',
       items: [
         { id: 'planificateur', libelle: 'Planificateur', route: '/planner' },
-        { id: 'sessions',      libelle: 'Sessions',      route: '/sessions', badge: 3 }
+        { id: 'sessions', libelle: 'Sessions', route: '/sessions', badge: 0 }
       ]
     },
     {
       libelle: 'Collaboration',
       items: [
-        { id: 'groupes', libelle: 'Groupes', route: '/groupes', badge: 'Nouveau', badgeClasse: 'nouveau' }
+        { id: 'groupes', libelle: 'Groupes', route: '/groupes' }
       ]
     },
     {
@@ -66,21 +66,23 @@ export class SidebarComponent implements OnInit {
     {
       libelle: 'Utilisateur',
       items: [
-        { id: 'profil',     libelle: 'Profil',     route: '/profil'     },
-    
+        { id: 'profil', libelle: 'Profil', route: '/profil' }
       ]
     }
   ];
 
-  /* ── Infos utilisateur ── */
   utilisateur = {
-    nom:    'Alex Martin',
-    role:   'Etudiant',
-    avatar: 'https://i.pravatar.cc/40?img=5'
+    nom: '',
+    role: ''
   };
 
   ngOnInit(): void {
-    // Synchroniser l'item actif avec l'URL courante
+    this.synchroniserItemActif();
+    this.chargerProfilSidebar();
+    this.chargerSessionsAujourdhui();
+  }
+
+  private synchroniserItemActif(): void {
     const url = this.router.url;
     for (const groupe of this.groupes) {
       for (const item of groupe.items) {
@@ -92,16 +94,70 @@ export class SidebarComponent implements OnInit {
     }
   }
 
-  /** Bascule le mode reduit / developpe */
+  private chargerProfilSidebar(): void {
+    this.userService.getMonProfil().subscribe({
+      next: (res) => {
+        const u = res?.data ?? res;
+
+        this.utilisateur = {
+          nom: u?.nom || 'Utilisateur',
+          role: u?.role === 'ADMINISTRATEUR' ? 'Administrateur' : 'Étudiant'
+        };
+      },
+      error: () => {
+        const userLocal = localStorage.getItem('user');
+        if (userLocal) {
+          try {
+            const u = JSON.parse(userLocal);
+            this.utilisateur = {
+              nom: u?.nom || 'Utilisateur',
+              role: u?.role === 'ADMINISTRATEUR' ? 'Administrateur' : 'Étudiant'
+            };
+          } catch {
+            this.utilisateur = { nom: 'Utilisateur', role: 'Étudiant' };
+          }
+        } else {
+          this.utilisateur = { nom: 'Utilisateur', role: 'Étudiant' };
+        }
+      }
+    });
+  }
+
+  private chargerSessionsAujourdhui(): void {
+    this.dashboardService.getDashboard().subscribe({
+      next: (res) => {
+        const data = res?.data ?? res;
+
+        // adapte selon ton backend
+        this.sessionsAujourdhui =
+          data?.sessionsAujourdhui ??
+          data?.nbSessionsAujourdhui ??
+          data?.sessionsAujourdHui ??
+          0;
+
+        const itemSessions = this.groupes
+          .flatMap(g => g.items)
+          .find(i => i.id === 'sessions');
+
+        if (itemSessions) {
+          itemSessions.badge = this.sessionsAujourdhui;
+        }
+      },
+      error: () => {
+        this.sessionsAujourdhui = 0;
+      }
+    });
+  }
+
   basculer(): void {
     this.reduit = !this.reduit;
     this.reduitChange.emit(this.reduit);
   }
 
-  /** Navigue vers une route */
   naviguer(id: string): void {
     this.itemActif = id;
     this.navigationChange.emit(id);
+
     for (const groupe of this.groupes) {
       const item = groupe.items.find(i => i.id === id);
       if (item) {
@@ -111,11 +167,17 @@ export class SidebarComponent implements OnInit {
     }
   }
 
-  /** Deconnexion */
   seDeconnecter(): void {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     this.router.navigate(['/login']);
   }
 
-  tracerParId(_: number, item: ItemNav): string    { return item.id; }
-  tracerParLibelle(_: number, g: GroupeNav): string { return g.libelle; }
+  tracerParId(_: number, item: ItemNav): string {
+    return item.id;
+  }
+
+  tracerParLibelle(_: number, g: GroupeNav): string {
+    return g.libelle;
+  }
 }

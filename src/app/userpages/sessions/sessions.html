@@ -9,25 +9,30 @@
 
   <div class="contenu-principal">
 
-    <!-- BARRE SUPERIEURE -->
     <header class="barre-superieure">
       <div class="barre-titre">
         <h1 class="titre-page">Sessions</h1>
         <span class="sous-titre-page">Planifiez et suivez vos sessions d'étude</span>
       </div>
+      <!-- ✅ Bouton notif + avatar -->
       <div class="actions-barre">
-        <div class="enveloppe-avatar">
-          <img src="https://i.pravatar.cc/40?img=5" alt="Utilisateur" class="avatar"/>
-        </div>
+        <button class="btn-notif-header" (click)="ouvrirNotifs()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"
+                  stroke="currentColor" stroke-width="2"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"
+                  stroke="currentColor" stroke-width="2"/>
+          </svg>
+          <span class="badge-notif-header" *ngIf="nbNotifsNonLues > 0">{{ nbNotifsNonLues }}</span>
+        </button>
+        <div class="avatar-header">{{ initialesUser }}</div>
       </div>
     </header>
 
     <div class="corps-page">
 
-      <!-- ════ 1. CARTES STATISTIQUES ════ -->
-      <!-- ✅ Temps total étudié / Sessions du jour -->
+      <!-- ════ STATS ════ -->
       <div class="grille-stats">
-
         <div class="stat-carte violet">
           <div class="stat-icone">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -54,21 +59,15 @@
           <div class="rangee-mini">
             <div class="mini-icone icone-vert">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"
-                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
             <div>
-              <div class="mini-valeur">
-                {{ objectifSemaine.fait }}h
-                <span class="mini-total">/ {{ objectifSemaine.total }}h</span>
-              </div>
+              <div class="mini-valeur">{{ objectifSemaine.fait }}h <span class="mini-total">/ {{ objectifSemaine.total }}h</span></div>
               <div class="mini-libelle">Objectif hebdomadaire</div>
             </div>
           </div>
-          <div class="barre-fond">
-            <div class="barre-remplissage" [style.width]="pctObjectifSemaine + '%'"></div>
-          </div>
+          <div class="barre-fond"><div class="barre-remplissage" [style.width]="pctObjectifSemaine + '%'"></div></div>
           <div class="barre-pct">{{ pctObjectifSemaine }}% atteint</div>
         </div>
 
@@ -82,48 +81,26 @@
               </svg>
             </div>
             <div>
-              <div class="mini-valeur">
-                {{ sessionsDeGroupe.length }}
-                <span class="mini-total">partagées</span>
-              </div>
+              <div class="mini-valeur">{{ sessionsDeGroupe.length }} <span class="mini-total">partagées</span></div>
               <div class="mini-libelle">Sessions de groupe</div>
             </div>
           </div>
-          <div class="barre-fond violet">
-            <div class="barre-remplissage" style="width:60%"></div>
-          </div>
-          <div class="barre-pct">{{ sessionsDeGroupe.length }} groupes actifs</div>
+          <div class="barre-fond violet"><div class="barre-remplissage" [style.width]="(sessionsDeGroupe.length * 10) + '%'"></div></div>
+          <div class="barre-pct">{{ sessionsDeGroupe.length }} sessions de groupe</div>
         </div>
-
       </div>
 
       <!-- ONGLETS -->
       <div class="onglets-nav">
-        <button class="onglet-nav"
-                [class.actif]="ongletActif === 'aujourd-hui'"
-                (click)="ongletActif = 'aujourd-hui'">
-          Aujourd'hui
+        <button class="onglet-nav" [class.actif]="ongletActif === 'aujourd-hui'" (click)="ongletActif = 'aujourd-hui'">Aujourd'hui</button>
+        <button class="onglet-nav" [class.actif]="ongletActif === 'toutes'" (click)="ongletActif = 'toutes'">Toutes les sessions</button>
+        <button class="onglet-nav" [class.actif]="ongletActif === 'groupes'" (click)="ongletActif = 'groupes'">
+          Sessions de groupe <span class="onglet-badge">{{ sessionsDeGroupe.length }}</span>
         </button>
-        <button class="onglet-nav"
-                [class.actif]="ongletActif === 'toutes'"
-                (click)="ongletActif = 'toutes'">
-          Toutes les sessions
-        </button>
-        <button class="onglet-nav"
-                [class.actif]="ongletActif === 'groupes'"
-                (click)="ongletActif = 'groupes'">
-          Sessions de groupe
-          <span class="onglet-badge">{{ sessionsDeGroupe.length }}</span>
-        </button>
-        <button class="onglet-nav"
-                [class.actif]="ongletActif === 'historique'"
-                (click)="ongletActif = 'historique'">
-          Historique
-        </button>
+        <button class="onglet-nav" [class.actif]="ongletActif === 'historique'" (click)="ongletActif = 'historique'">Historique</button>
       </div>
 
-      <!-- ════ 2. SESSIONS DU JOUR ════ -->
-      <!-- ✅ heure / matière / durée / statut / lancer -->
+      <!-- ════ AUJOURD'HUI ════ -->
       <div *ngIf="ongletActif === 'aujourd-hui'">
         <div class="section-carte">
           <div class="section-entete">
@@ -131,66 +108,43 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
                 <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>
-                <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
             <div>
               <h2 class="section-titre">Sessions d'aujourd'hui</h2>
-              <p class="section-desc">{{ sessionsAujourdhui.length }} sessions planifiées</p>
+              <p class="section-desc">{{ sessionsAujourdhui.length }} sessions</p>
             </div>
           </div>
 
           <div class="liste-jour">
-            <div class="item-session"
-                 *ngFor="let s of sessionsAujourdhui"
-                 [style.border-left-color]="s.couleur">
-
-              <!-- Heure -->
+            <div class="item-session" *ngFor="let s of sessionsAujourdhui" [style.border-left-color]="s.couleur">
               <div class="item-heure">
                 <span class="heure-val">{{ s.debut }}</span>
                 <span class="heure-sep">—</span>
                 <span class="heure-fin">{{ s.fin }}</span>
               </div>
-
-              <!-- Séparateur coloré -->
               <div class="item-separateur" [style.background]="s.couleur"></div>
-
-              <!-- Matière + durée + groupe -->
               <div class="item-info">
                 <span class="item-matiere" [style.color]="s.couleur">{{ s.matiere }}</span>
                 <div class="item-meta">
                   <span class="item-duree">{{ s.duree }}</span>
-                  <span class="tag-groupe" *ngIf="s.partagee">
+                  <span class="tag-groupe" *ngIf="s.partagee || s.estSessionGroupe">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
                       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
                       <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2"/>
                     </svg>
                     {{ s.groupe }}
                   </span>
                 </div>
               </div>
-
-              <!-- Statut -->
-              <span class="badge-statut" [class]="s.statut">
-                {{ libelleStatut(s.statut) }}
-              </span>
-
-              <!-- Actions : Lancer + Partager -->
+              <span class="badge-statut" [class]="s.statut">{{ libelleStatut(s.statut) }}</span>
               <div class="item-actions">
-                <button class="btn-lancer"
-                        *ngIf="s.statut === 'planifiee'"
-                        (click)="lancerSession(s)">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                    <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
-                  </svg>
+                <button class="btn-lancer" *ngIf="s.statut === 'planifiee' && !s.estSessionGroupe" (click)="lancerSession(s)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
                   Lancer
                 </button>
-                <button class="btn-partager"
-                        *ngIf="!s.partagee"
-                        (click)="ouvrirModalPartage(s)"
-                        title="Partager avec un groupe">
+                <button class="btn-terminer" *ngIf="s.statut === 'en-cours' && !s.estSessionGroupe" (click)="terminerSession(s)">✓ Terminer</button>
+                <button class="btn-partager" *ngIf="!s.partagee && !s.estSessionGroupe" (click)="ouvrirModalPartage(s)" title="Partager">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                     <circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2"/>
                     <circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
@@ -199,11 +153,15 @@
                     <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" stroke-width="2"/>
                   </svg>
                 </button>
+                <button class="btn-commenter" *ngIf="!s.estSessionGroupe" (click)="ouvrirCommentaires(s)" title="Notes & commentaires">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
                 <span class="btn-check" *ngIf="s.statut === 'terminee'">✓</span>
               </div>
             </div>
-
-            <!-- Vide -->
             <div class="liste-vide" *ngIf="sessionsAujourdhui.length === 0">
               <div class="vide-emoji">📅</div>
               <p>Aucune session planifiée aujourd'hui</p>
@@ -212,51 +170,37 @@
         </div>
       </div>
 
-      <!-- ════ 3. TOUTES LES SESSIONS ════ -->
-      <!-- ✅ date / matière / durée / statut -->
+      <!-- ════ TOUTES LES SESSIONS ════ -->
       <div *ngIf="ongletActif === 'toutes'">
-
         <div class="section-carte">
           <div class="section-entete">
             <div class="section-icone bleu">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <line x1="8" y1="6"  x2="21" y2="6"  stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="8" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 <line x1="8" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 <line x1="8" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <line x1="3" y1="6"  x2="3.01" y2="6"  stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="3" y1="6" x2="3.01" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 <line x1="3" y1="12" x2="3.01" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 <line x1="3" y1="18" x2="3.01" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
             <div>
               <h2 class="section-titre">Toutes les sessions</h2>
-              <p class="section-desc">{{ toutesLesSessions.length }} sessions au total</p>
+              <p class="section-desc">{{ toutesLesSessions.length }} sessions</p>
             </div>
-            <!-- Recherche dans l'en-tête -->
             <div class="champ-recherche-inline">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                 <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
                 <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
-              <input type="text"
-                     placeholder="Rechercher une session..."
-                     [(ngModel)]="rechercheSession"/>
-              <button class="btn-clear-search"
-                      *ngIf="rechercheSession"
-                      (click)="rechercheSession=''">✕</button>
+              <input type="text" placeholder="Rechercher..." [(ngModel)]="rechercheSession"/>
+              <button class="btn-clear-search" *ngIf="rechercheSession" (click)="rechercheSession=''">✕</button>
             </div>
           </div>
 
           <table class="tableau-sessions">
             <thead>
-              <tr>
-                <th>Date</th>
-                <th>Matière</th>
-                <th>Heure</th>
-                <th>Durée</th>
-                <th>Statut</th>
-                <th>Action</th>
-              </tr>
+              <tr><th>Date</th><th>Matière</th><th>Heure</th><th>Durée</th><th>Statut</th><th>Actions</th></tr>
             </thead>
             <tbody>
               <tr *ngFor="let s of sessionsFiltrees">
@@ -269,22 +213,19 @@
                 </td>
                 <td class="td-heure">{{ s.debut }} — {{ s.fin }}</td>
                 <td class="td-duree">{{ s.duree }}</td>
+                <td><span class="badge-statut" [class]="s.statut">{{ libelleStatut(s.statut) }}</span></td>
                 <td>
-                  <span class="badge-statut" [class]="s.statut">
-                    {{ libelleStatut(s.statut) }}
-                  </span>
-                </td>
-                <td>
-                  <button class="btn-lancer-sm"
-                          *ngIf="s.statut === 'planifiee'"
-                          (click)="lancerSession(s)">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                      <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
-                    </svg>
-                    Lancer
-                  </button>
-                  <span class="btn-check" *ngIf="s.statut === 'terminee'">✓</span>
-                  <span class="td-vide-action" *ngIf="s.statut === 'manquee'">—</span>
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <button class="btn-lancer-sm" *ngIf="s.statut === 'planifiee'" (click)="lancerSession(s)">▶ Lancer</button>
+                    <button class="btn-lancer-sm" *ngIf="s.statut === 'en-cours'" (click)="terminerSession(s)">✓ Terminer</button>
+                    <span class="btn-check" *ngIf="s.statut === 'terminee'">✓</span>
+                    <button class="btn-commenter" (click)="ouvrirCommentaires(s)" title="Notes">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                              stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                    </button>
+                  </div>
                 </td>
               </tr>
               <tr *ngIf="toutesLesSessions.length === 0">
@@ -295,8 +236,7 @@
         </div>
       </div>
 
-      <!-- ════ 4. SESSIONS DE GROUPE ════ -->
-      <!-- ✅ groupe / matière / heure / membres / rejoindre -->
+      <!-- ════ SESSIONS DE GROUPE ════ -->
       <div *ngIf="ongletActif === 'groupes'">
         <div class="section-carte">
           <div class="section-entete">
@@ -313,12 +253,13 @@
             </div>
           </div>
 
-          <div class="grille-groupe">
-            <div class="carte-groupe" *ngFor="let s of sessionsDeGroupe">
+          <div class="etat-chargement" *ngIf="chargementSGroupe">
+            <span>Chargement des sessions de groupe...</span>
+          </div>
 
-              <!-- Bandeau groupe -->
-              <div class="cg-bandeau"
-                   [style.background]="s.couleur + '22'">
+          <div class="grille-groupe" *ngIf="!chargementSGroupe">
+            <div class="carte-groupe" *ngFor="let s of sessionsDeGroupe">
+              <div class="cg-bandeau" [style.background]="s.couleur + '22'">
                 <div class="cg-tag-groupe">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
@@ -329,8 +270,6 @@
                 </div>
                 <span class="badge-statut" [class]="s.statut">{{ libelleStatut(s.statut) }}</span>
               </div>
-
-              <!-- Corps -->
               <div class="cg-corps">
                 <div class="cg-matiere" [style.color]="s.couleur">{{ s.matiere }}</div>
                 <div class="cg-horaire">
@@ -340,38 +279,19 @@
                   </svg>
                   {{ formatDate(s.date) }} · {{ s.debut }} — {{ s.fin }} ({{ s.duree }})
                 </div>
-                <div class="cg-hote">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
-                    <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                  Organisé par <strong>{{ s.hote }}</strong>
-                </div>
-                <!-- Membres -->
-                <div class="cg-membres">
-                  <div class="membre-avatar"
-                       *ngFor="let m of s.membres"
-                       [style.background]="s.couleur">
-                    {{ initiales(m) }}
-                  </div>
-                  <span class="membres-noms">{{ s.membres?.join(', ') }}</span>
-                </div>
+                <div class="cg-hote">Organisé par <strong>{{ s.hote || 'Membre' }}</strong></div>
               </div>
-
-              <!-- Pied : Rejoindre -->
               <div class="cg-pied">
-                <button class="btn-lancer"
-                        *ngIf="s.statut === 'planifiee'"
-                        (click)="lancerSession(s)">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                    <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
-                  </svg>
+                <button class="btn-lancer" *ngIf="s.statut === 'planifiee' && !s.estSessionGroupe" (click)="lancerSession(s)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
                   Rejoindre
                 </button>
+                <span style="font-size:12px;color:#888;" *ngIf="s.estSessionGroupe && s.statut === 'planifiee'">
+                  Gérer dans la page Groupes →
+                </span>
                 <span class="cg-termine" *ngIf="s.statut === 'terminee'">Session terminée ✓</span>
               </div>
             </div>
-
             <div class="liste-vide" *ngIf="sessionsDeGroupe.length === 0">
               <div class="vide-emoji">👥</div>
               <p>Aucune session de groupe</p>
@@ -380,8 +300,7 @@
         </div>
       </div>
 
-      <!-- ════ 5. HISTORIQUE ════ -->
-      <!-- ✅ sessions terminées / temps étudié -->
+      <!-- ════ HISTORIQUE ════ -->
       <div *ngIf="ongletActif === 'historique'">
         <div class="section-carte">
           <div class="section-entete">
@@ -397,7 +316,6 @@
               <p class="section-desc">Vos sessions terminées</p>
             </div>
           </div>
-
           <div class="liste-historique">
             <div class="item-historique" *ngFor="let h of historique">
               <div class="histo-date-col">
@@ -406,28 +324,70 @@
               </div>
               <div class="histo-barre-col">
                 <div class="histo-barre-fond">
-                  <div class="histo-barre-fill"
-                       [style.width]="(h.heures / 6 * 100) + '%'"></div>
+                  <div class="histo-barre-fill" [style.width]="(h.heures / 6 * 100) + '%'"></div>
                 </div>
               </div>
               <div class="histo-heures">{{ h.heures }}h étudiées</div>
+            </div>
+            <div class="liste-vide" *ngIf="historique.length === 0">
+              <p>Aucune session terminée</p>
             </div>
           </div>
         </div>
       </div>
 
-    </div><!-- /corps-page -->
-  </div><!-- /contenu-principal -->
+    </div>
+  </div>
 
-  <!-- ════ MODAL PARTAGE SESSION ════ -->
+  <!-- ════ MODAL NOTIFICATIONS ✅ ════ -->
+  <div class="modal-overlay" *ngIf="modalNotifsOuvert" (click)="fermerNotifs()">
+    <div class="modal-contenu modal-notifs" (click)="$event.stopPropagation()">
+
+      <div class="modal-entete">
+        <div>
+          <h3 class="modal-titre">🔔 Notifications</h3>
+          <p class="modal-sous-titre">{{ nbNotifsNonLues }} non lue(s)</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-tout-lire" *ngIf="nbNotifsNonLues > 0" (click)="marquerToutesLues()">
+            Tout marquer lu
+          </button>
+          <button class="modal-fermer" (click)="fermerNotifs()">✕</button>
+        </div>
+      </div>
+
+      <div class="liste-notifications-modal">
+        <div class="notifs-chargement" *ngIf="chargementNotifs">Chargement...</div>
+        <div class="notifs-vide" *ngIf="!chargementNotifs && notifications.length === 0">
+          <div style="font-size:2rem;">📭</div>
+          <p>Aucune notification</p>
+        </div>
+        <div class="item-notif-modal"
+             *ngFor="let n of notifications"
+             [class.non-lue]="!n.lue"
+             (click)="marquerLue(n.id)">
+          <div class="notif-icone-modal">{{ iconeNotif(n.type) }}</div>
+          <div class="notif-corps-modal">
+            <p class="notif-message-modal">{{ n.message }}</p>
+            <span class="notif-date-modal">{{ formatNotifDate(n.envoyeeLe) }}</span>
+          </div>
+          <div class="notif-statut-modal">
+            <span class="point-non-lu" *ngIf="!n.lue"></span>
+            <span class="lu-label" *ngIf="n.lue">✓</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════ MODAL PARTAGE ════ -->
   <div class="modal-overlay" *ngIf="modalPartageOuvert" (click)="fermerModalPartage()">
     <div class="modal-contenu" (click)="$event.stopPropagation()">
-
       <div class="modal-entete">
         <h3 class="modal-titre">Partager la session</h3>
         <button class="modal-fermer" (click)="fermerModalPartage()">✕</button>
       </div>
-
       <div class="modal-session-info" *ngIf="sessionAPartager">
         <div class="point-matiere" [style.background]="sessionAPartager.couleur"></div>
         <div>
@@ -435,41 +395,96 @@
           <span class="modal-horaire">{{ sessionAPartager.debut }} — {{ sessionAPartager.fin }}</span>
         </div>
       </div>
-
       <div class="modal-corps">
         <label class="filtre-label">Choisir un groupe</label>
-        <div class="liste-groupes">
-          <div class="option-groupe"
-               *ngFor="let g of groupesDisponibles"
-               [class.selectionne]="groupeSelectionne === g"
-               (click)="groupeSelectionne = g">
+        <div *ngIf="chargementGroupes" style="text-align:center;padding:1rem;color:#888;">Chargement...</div>
+        <div class="liste-groupes" *ngIf="!chargementGroupes">
+          <div class="option-groupe" *ngFor="let g of groupesDisponibles"
+               [class.selectionne]="groupeSelectionneId === g.id" (click)="selectionnerGroupe(g)">
             <div class="og-icone">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
                 <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2"/>
               </svg>
             </div>
-            <span class="og-nom">{{ g }}</span>
-            <div class="og-check" *ngIf="groupeSelectionne === g">✓</div>
+            <span class="og-nom">{{ g.nom }}</span>
+            <div class="og-check" *ngIf="groupeSelectionneId === g.id">✓</div>
+          </div>
+          <div *ngIf="groupesDisponibles.length === 0" style="text-align:center;padding:1.5rem;color:#aaa;font-size:14px;">
+            Aucun groupe disponible.
           </div>
         </div>
       </div>
-
       <div class="modal-actions">
         <button class="btn-annuler" (click)="fermerModalPartage()">Annuler</button>
-        <button class="btn-confirmer"
-                (click)="partagerSession()"
-                [disabled]="!groupeSelectionne">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2"/>
-            <circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-            <circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2"/>
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" stroke-width="2"/>
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" stroke-width="2"/>
-          </svg>
-          Partager avec {{ groupeSelectionne || '...' }}
+        <button class="btn-confirmer" (click)="partagerSession()" [disabled]="!groupeSelectionneId">
+          Partager avec {{ groupeSelectionneName || '...' }}
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ MODAL COMMENTAIRES ════ -->
+  <div class="modal-overlay" *ngIf="modalCommentairesOuvert" (click)="fermerCommentaires()">
+    <div class="modal-contenu modal-commentaires" (click)="$event.stopPropagation()">
+
+      <div class="modal-entete">
+        <div>
+          <h3 class="modal-titre">📝 Notes & Commentaires</h3>
+          <p class="modal-sous-titre" *ngIf="sessionCommentairee">
+            {{ sessionCommentairee.matiere }} · {{ sessionCommentairee.debut }} — {{ sessionCommentairee.fin }}
+          </p>
+        </div>
+        <button class="modal-fermer" (click)="fermerCommentaires()">✕</button>
+      </div>
+
+      <div class="liste-commentaires">
+        <div class="commentaires-chargement" *ngIf="chargementCommentaires">Chargement...</div>
+        <div class="commentaires-vide" *ngIf="!chargementCommentaires && commentaires.length === 0">
+          <div style="font-size:2rem;">📝</div>
+          <p>Aucune note pour cette session.<br><small>Ajoutez vos réflexions, points importants...</small></p>
+        </div>
+        <div class="item-commentaire" *ngFor="let c of commentaires">
+          <div class="commentaire-header">
+            <div class="commentaire-auteur">
+              <div class="commentaire-avatar">{{ initiales(c.auteurNom) }}</div>
+              <span class="commentaire-nom">{{ c.auteurNom }}</span>
+            </div>
+            <div class="commentaire-meta">
+              <span class="commentaire-date">{{ formatCommentaireDate(c.creeLe) }}</span>
+              <div class="commentaire-actions">
+                <button class="btn-del-commentaire" (click)="supprimerCommentaire(c)" title="Supprimer">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                    <polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="commentaire-contenu">{{ c.contenu }}</div>
+        </div>
+      </div>
+
+      <div class="zone-nouveau-commentaire">
+        <textarea class="input-commentaire"
+                  [(ngModel)]="nouveauCommentaire"
+                  placeholder="Ajouter une note... (points clés, difficultés, réflexions)"
+                  rows="3"
+                  (keydown.control.enter)="ajouterCommentaire()">
+        </textarea>
+        <div class="zone-actions-commentaire">
+          <span class="hint-raccourci">Ctrl+Entrée pour envoyer</span>
+          <button class="btn-ajouter-commentaire"
+                  (click)="ajouterCommentaire()"
+                  [disabled]="!nouveauCommentaire.trim() || envoiCommentaire">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" *ngIf="!envoiCommentaire">
+              <line x1="22" y1="2" x2="11" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            {{ envoiCommentaire ? 'Ajout...' : 'Ajouter' }}
+          </button>
+        </div>
       </div>
 
     </div>

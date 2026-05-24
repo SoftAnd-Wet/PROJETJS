@@ -1,14 +1,22 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild,
+         ElementRef, AfterViewChecked, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../sidebar/sidebar';
+import { GroupeService } from '../../services/groupe.service';
+import { InvitationGroupeService } from '../../services/invitation-groupe.service';
+import { MessageService } from '../../services/message.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+import { NotificationService } from '../../services/notification.service';
 
 export interface Membre {
-  id:       number;
-  nom:      string;
-  role:     'admin' | 'membre';
-  actif:    boolean;
-  avatar?:  string;
+  id:    number;
+  nom:   string;
+  role:  'admin' | 'membre';
+  actif: boolean;
 }
 
 export interface SessionGroupe {
@@ -24,11 +32,12 @@ export interface SessionGroupe {
 }
 
 export interface MessageChat {
-  id:        number;
-  auteur:    string;
-  texte:     string;
+  id:         number;
+  auteur:     string;
+  auteurId:   number;
+  texte:      string;
   horodatage: string;
-  moi:       boolean;
+  moi:        boolean;
 }
 
 export interface Groupe {
@@ -44,13 +53,16 @@ export interface Groupe {
   dateCreation: string;
 }
 
-export interface Notification {
-  id:      number;
-  type:    'invitation' | 'session' | 'commentaire' | 'membre';
-  texte:   string;
-  groupe:  string;
-  temps:   string;
-  lu:      boolean;
+export interface InvitationGroupe {
+  id:              number;
+  groupeId:        number;
+  groupeNom:       string;
+  emetteurId:      number;
+  emetteurNom:     string;
+  destinataireId:  number;
+  destinataireNom: string;
+  statut:          'EN_ATTENTE' | 'ACCEPTEE' | 'REFUSEE';
+  creeLe:          string;
 }
 
 @Component({
@@ -60,111 +72,276 @@ export interface Notification {
   templateUrl: './groupes.html',
   styleUrls:   ['./groupes.css']
 })
-export class GroupesComponent implements OnInit {
+export class GroupesComponent implements OnInit, OnDestroy, AfterViewChecked {
 
-  sidebarReduite = false;
-  pageActive     = 'groupes';
+  @ViewChild('chatFin') chatFin!: ElementRef;
 
-  /* ── Vue ── */
-  ongletActif: 'mes-groupes' | 'notifications' = 'mes-groupes';
+  nouvellesNotifChat  = false;
+  notificationsChat:  any[] = [];
+  private notifPollInterval: any = null;
+
+  sidebarReduite    = false;
+  pageActive        = 'groupes';
+  ongletActif:      'mes-groupes' | 'notifications' = 'mes-groupes';
   groupeSelectionne: Groupe | null = null;
-  panneauActif: 'membres' | 'sessions' | 'chat' = 'sessions';
+  panneauActif:     'membres' | 'sessions' | 'chat' = 'sessions';
 
-  /* ── Modaux ── */
-  modalCreerOuvert    = false;
-  modalInviterOuvert  = false;
-  modalSessionOuvert  = false;
+  modalCreerOuvert   = false;
+  modalInviterOuvert = false;
+  modalSessionOuvert = false;
 
-  /* ── Nouveau groupe ── */
-  nouveauGroupe = { nom: '', description: '', couleur: '#7c4dff', emoji: '📚' };
-  readonly couleursGroupe = ['#7c4dff','#1e88e5','#00bcd4','#00c853','#ff9100','#f44336','#e91e63'];
-  readonly emojisGroupe   = ['📚','💻','🔬','🧮','🤖','📊','🎯','⚡'];
+  nouveauGroupe = {
+    nom: '', description: '', couleur: '#7c4dff', emoji: '📚'
+  };
 
-  /* ── Invitation ── */
-  emailInvitation = '';
-  erreurInvitation = '';
+  readonly couleursGroupe = [
+    '#7c4dff','#1e88e5','#00bcd4','#00c853',
+    '#ff9100','#f44336','#e91e63'
+  ];
+  readonly emojisGroupe = [
+    '📚','💻','🔬','🧮','🤖','📊','🎯','⚡'
+  ];
+  readonly JOURS = [
+    'Lundi','Mardi','Mercredi','Jeudi',
+    'Vendredi','Samedi','Dimanche'
+  ];
 
-  /* ── Nouvelle session ── */
-  nouvelleSession = { matiere: '', heure: '', fin: '', jour: 'Lundi' };
+  emailInvitation    = '';
+  erreurInvitation   = '';
+  invitationEnvoyee  = false;
+  invitationEnCours  = false;
 
-  /* ── Chat ── */
-  nouveauMessage = '';
+  nouvelleSession = { matiere:'', heure:'', fin:'', jour:'Lundi' };
+  erreurSession   = '';
+  sessionEnCours  = false;
+  nouveauMessage  = '';
+  envoyageMessage = false;
 
-  /* ── Données ── */
-  mesgroupes: Groupe[] = [
-    {
-      id: 1, nom: 'Algo Team', description: 'Révision algorithmes et structures de données',
-      couleur: '#1e88e5', emoji: '💻', codeInvit: 'ALGO42', dateCreation: '2025-03-01',
-      membres: [
-        { id:1, nom:'Alex Martin',  role:'admin',  actif:true  },
-        { id:2, nom:'Sara Benali',  role:'membre', actif:true  },
-        { id:3, nom:'Karim Idrissi',role:'membre', actif:false },
-        { id:4, nom:'Lina Moussai', role:'membre', actif:true  },
-      ],
-      sessions: [
-        { id:1, matiere:'Algorithmes',   couleur:'#1e88e5', jour:'Mardi',  heure:'19:00', fin:'21:00', duree:'2h',   statut:'planifiee', hote:'Alex'  },
-        { id:2, matiere:'Structures',    couleur:'#7c4dff', jour:'Jeudi',  heure:'20:00', fin:'22:00', duree:'2h',   statut:'planifiee', hote:'Sara'  },
-        { id:3, matiere:'Algorithmes',   couleur:'#1e88e5', jour:'Samedi', heure:'10:00', fin:'12:00', duree:'2h',   statut:'terminee',  hote:'Karim' },
-      ],
-      messages: [
-        { id:1, auteur:'Sara',  texte:'On révise les graphes ce soir ?',       horodatage:'18:42', moi:false },
-        { id:2, auteur:'Moi',   texte:'Oui je suis dispo à partir de 19h',     horodatage:'18:45', moi:true  },
-        { id:3, auteur:'Karim', texte:'Je serai en retard, commencez sans moi',horodatage:'18:50', moi:false },
-        { id:4, auteur:'Lina',  texte:'OK ! On démarre à 19h alors',           horodatage:'18:52', moi:false },
-      ]
-    },
-    {
-      id: 2, nom: 'Math Squad', description: 'Mathématiques et analyse pour les examens',
-      couleur: '#7c4dff', emoji: '🧮', codeInvit: 'MATH99', dateCreation: '2025-02-20',
-      membres: [
-        { id:1, nom:'Alex Martin',  role:'membre', actif:true  },
-        { id:5, nom:'Lina Moussai', role:'admin',  actif:true  },
-        { id:6, nom:'Omar Fassi',   role:'membre', actif:true  },
-      ],
-      sessions: [
-        { id:4, matiere:'Mathematiques', couleur:'#7c4dff', jour:'Lundi',   heure:'10:00', fin:'12:00', duree:'2h', statut:'planifiee', hote:'Lina' },
-        { id:5, matiere:'Analyse',       couleur:'#9c27b0', jour:'Vendredi',heure:'14:00', fin:'16:00', duree:'2h', statut:'planifiee', hote:'Omar' },
-      ],
-      messages: [
-        { id:5, auteur:'Lina', texte:'Chapitre 5 pour lundi svp',horodatage:'09:10', moi:false },
-        { id:6, auteur:'Moi',  texte:'Vu ! Je prépare les exercices', horodatage:'09:15', moi:true },
-      ]
-    },
-    {
-      id: 3, nom: 'BD Masters', description: 'Base de données relationnelles et NoSQL',
-      couleur: '#00bcd4', emoji: '📊', codeInvit: 'BD2025', dateCreation: '2025-03-05',
-      membres: [
-        { id:1, nom:'Alex Martin', role:'membre', actif:true  },
-        { id:2, nom:'Sara Benali', role:'admin',  actif:true  },
-      ],
-      sessions: [
-        { id:6, matiere:'Base de donnees', couleur:'#00bcd4', jour:'Mercredi', heure:'15:00', fin:'17:00', duree:'2h', statut:'planifiee', hote:'Sara' },
-      ],
-      messages: [
-        { id:7, auteur:'Sara', texte:'Révision SQL pour mercredi', horodatage:'14:00', moi:false },
-      ]
+  mesgroupes:  Groupe[]           = [];
+  invitations: InvitationGroupe[] = [];
+
+  private sessionNomCache = new Map<number, string>();
+
+  chargement            = false;
+  chargementMessages    = false;
+  chargementInvitations = false;
+  creationEnCours       = false;
+  erreur                = '';
+  erreurInvitations     = '';
+
+  monUserId  = 0;
+  monUserNom = '';
+
+  private chatPollInterval:  any = null;
+  private defilementNecessaire   = false;
+
+  constructor(
+    private groupeService:           GroupeService,
+    private invitationGroupeService: InvitationGroupeService,
+    private messageService:          MessageService,
+    private cdr:                     ChangeDetectorRef,
+    public notifService: NotificationService,
+    private http:                    HttpClient
+  ) {}
+
+  ngOnInit(): void {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const u        = JSON.parse(userStr);
+        this.monUserId  = u.userId ?? u.id ?? 0;
+        this.monUserNom = u.nom    ?? u.name ?? '';
+      } catch {}
     }
-  ];
 
-  groupesDecouverte = [
-    { id:10, nom:'IA Lab',       description:'Intelligence artificielle et ML', couleur:'#ff9100', emoji:'🤖', membres:7, ouvert:true  },
-    { id:11, nom:'Reseaux Team', description:'Réseaux et sécurité informatique',couleur:'#e91e63', emoji:'🔬', membres:4, ouvert:true  },
-    { id:12, nom:'Web Dev',      description:'Développement web full-stack',    couleur:'#00c853', emoji:'🎯', membres:9, ouvert:false },
-  ];
+    this.restaurerCacheNoms();
+    this.chargerTout();
+    this.demarrerPollNotifications();
+  }
 
-  notifications: Notification[] = [
-    { id:1, type:'invitation',   texte:'Sara vous invite à rejoindre "IA Lab"',       groupe:'IA Lab',    temps:'il y a 5 min',   lu:false },
-    { id:2, type:'session',      texte:'Nouvelle session dans "Algo Team" — Mardi 19h',groupe:'Algo Team', temps:'il y a 1h',      lu:false },
-    { id:3, type:'commentaire',  texte:'Karim a commenté la session Algorithmes',      groupe:'Algo Team', temps:'il y a 2h',      lu:true  },
-    { id:4, type:'membre',       texte:'Omar a rejoint "Math Squad"',                  groupe:'Math Squad',temps:'il y a 3h',      lu:true  },
-    { id:5, type:'session',      texte:'Rappel : session BD Masters dans 30 min',      groupe:'BD Masters',temps:'il y a 30 min',  lu:false },
-  ];
+  ngOnDestroy(): void {
+    this.arreterPollChat();
+    this.arreterPollNotifications();
+  }
 
-  ngOnInit(): void {}
+  ngAfterViewChecked(): void {
+    if (this.defilementNecessaire) {
+      this.defilerVersLeBas();
+      this.defilementNecessaire = false;
+    }
+  }
 
-  /* ── Getters ── */
-  get notificationsNonLues(): number {
-    return this.notifications.filter(n => !n.lu).length;
+  /* ════════════════════
+     CHARGEMENT
+  ════════════════════ */
+
+  chargerTout(): void {
+    this.chargement            = true;
+    this.chargementInvitations = true;
+    this.erreur                = '';
+    this.erreurInvitations     = '';
+
+    forkJoin({
+      groupes:     this.groupeService.getMesGroupes()
+                       .pipe(catchError(() => of(null))),
+      invitations: this.invitationGroupeService.getMesInvitations()
+                       .pipe(catchError(() => of(null)))
+    }).subscribe({
+      next: ({ groupes, invitations }) => {
+        if (groupes) {
+          const data: any[] = groupes?.data ?? groupes ?? [];
+          const selectedId  = this.groupeSelectionne?.id ?? null;
+
+          this.mesgroupes = data.map((g: any, i: number) => ({
+            id:           g.id,
+            nom:          g.nom,
+            description:  g.description || '',
+            couleur:      this.couleursGroupe[i % this.couleursGroupe.length],
+            emoji:        this.emojisGroupe[i % this.emojisGroupe.length],
+            membres:      [],
+            sessions:     [],
+            messages:     [],
+            codeInvit:    `GRP${g.id}`,
+            dateCreation: new Date().toISOString().slice(0, 10)
+          }));
+
+          this.chargerDetailsGroupesEnParallele();
+
+          if (selectedId) {
+            const retrouve = this.mesgroupes.find(g => g.id === selectedId);
+            this.groupeSelectionne = retrouve || null;
+            if (this.groupeSelectionne)
+              this.chargerDetailGroupe(this.groupeSelectionne);
+          }
+        } else {
+          this.erreur = 'Impossible de charger les groupes.';
+        }
+
+        if (invitations) {
+          this.invitations = invitations?.data ?? invitations ?? [];
+        } else {
+          this.erreurInvitations = 'Impossible de charger les invitations.';
+        }
+
+        this.chargement            = false;
+        this.chargementInvitations = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  chargerDetailsGroupesEnParallele(): void {
+    if (this.mesgroupes.length === 0) return;
+    this.mesgroupes.forEach(g =>
+      forkJoin({
+        sessions: this.groupeService.getSessionsGroupe(g.id)
+                      .pipe(catchError(() => of(null))),
+        membres:  this.groupeService.getMembresGroupe(g.id)
+                      .pipe(catchError(() => of(null)))
+      }).subscribe({
+        next: ({ sessions, membres }) => {
+          if (sessions)
+            g.sessions = (sessions?.data ?? sessions ?? [])
+              .map((s: any) => this.mapSession(s, g.couleur));
+          if (membres)
+            g.membres = (membres?.data ?? membres ?? [])
+              .map((m: any) => this.mapMembre(m));
+          this.cdr.detectChanges();
+        }
+      })
+    );
+  }
+
+  chargerDetailGroupe(groupe: Groupe): void {
+    forkJoin({
+      sessions: this.groupeService.getSessionsGroupe(groupe.id)
+                    .pipe(catchError(() => of(null))),
+      membres:  this.groupeService.getMembresGroupe(groupe.id)
+                    .pipe(catchError(() => of(null)))
+    }).subscribe({
+      next: ({ sessions, membres }) => {
+        if (sessions)
+          groupe.sessions = (sessions?.data ?? sessions ?? [])
+            .map((s: any) => this.mapSession(s, groupe.couleur));
+        if (membres)
+          groupe.membres = (membres?.data ?? membres ?? [])
+            .map((m: any) => this.mapMembre(m));
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  /* ════════════════════
+     GROUPES
+  ════════════════════ */
+
+  chargerMesGroupes(): void { this.chargerTout(); }
+
+  ouvrirGroupe(g: Groupe): void {
+    this.groupeSelectionne = g;
+    this.panneauActif      = 'sessions';
+    this.arreterPollChat();
+    this.chargerDetailGroupe(g);
+  }
+
+  fermerGroupe(): void {
+    this.arreterPollChat();
+    this.groupeSelectionne = null;
+  }
+
+  ouvrirModalCreer(): void {
+    this.modalCreerOuvert = true;
+    this.nouveauGroupe = { nom:'', description:'', couleur:'#7c4dff', emoji:'📚' };
+  }
+
+  creerGroupe(): void {
+    if (!this.nouveauGroupe.nom.trim() || this.creationEnCours) return;
+    this.creationEnCours = true;
+
+    this.groupeService.creer({
+      nom:         this.nouveauGroupe.nom.trim(),
+      description: this.nouveauGroupe.description.trim()
+    }).subscribe({
+      next: (res) => {
+        const data = res?.data ?? res;
+        if (data?.id) {
+          this.mesgroupes = [{
+            id:           data.id,
+            nom:          data.nom,
+            description:  data.description || '',
+            couleur:      this.nouveauGroupe.couleur,
+            emoji:        this.nouveauGroupe.emoji,
+            membres:      [],
+            sessions:     [],
+            messages:     [],
+            codeInvit:    `GRP${data.id}`,
+            dateCreation: new Date().toISOString().slice(0, 10)
+          }, ...this.mesgroupes];
+        } else {
+          this.chargerTout();
+        }
+        this.modalCreerOuvert = false;
+        this.creationEnCours  = false;
+      },
+      error: (err) => {
+        this.creationEnCours = false;
+        alert(err?.error?.message || 'Erreur création groupe.');
+      }
+    });
+  }
+
+  quitterGroupe(id: number): void {
+    if (!confirm('Quitter ce groupe ?')) return;
+    this.groupeService.quitter(id).subscribe({
+      next: () => {
+        this.mesgroupes = this.mesgroupes.filter(g => g.id !== id);
+        if (this.groupeSelectionne?.id === id) {
+          this.arreterPollChat();
+          this.groupeSelectionne = null;
+        }
+      },
+      error: (err) => alert(err?.error?.message || 'Erreur.')
+    });
   }
 
   get totalMembres(): number {
@@ -173,142 +350,628 @@ export class GroupesComponent implements OnInit {
     return ids.size;
   }
 
-  /* ── Sélection groupe ── */
-  ouvrirGroupe(g: Groupe): void {
-    this.groupeSelectionne = g;
-    this.panneauActif = 'sessions';
+  get totalSessionsGroupes(): number {
+    return this.mesgroupes.reduce((t,g) => t+(g.sessions?.length||0), 0);
   }
 
-  fermerGroupe(): void {
-    this.groupeSelectionne = null;
+  trackByGroupe(i: number, g: Groupe): number { return g.id; }
+
+  /* ════════════════════
+     MEMBRES
+  ════════════════════ */
+
+  afficherNomMembre(m: Membre): string {
+    if (!m) return 'Membre';
+    return m.id === this.monUserId ? 'Vous' : (m.nom || 'Membre');
   }
 
-  /* ── Créer groupe ── */
-  ouvrirModalCreer(): void {
-    this.modalCreerOuvert = true;
-    this.nouveauGroupe = { nom:'', description:'', couleur:'#7c4dff', emoji:'📚' };
+  afficherRoleMembre(m: Membre): string {
+    if (!m) return 'Membre';
+    return m.role === 'admin' ? 'Administrateur' : 'Membre';
   }
 
-  creerGroupe(): void {
-    if (!this.nouveauGroupe.nom.trim()) return;
-    const g: Groupe = {
-      id:           Date.now(),
-      nom:          this.nouveauGroupe.nom.trim(),
-      description:  this.nouveauGroupe.description.trim(),
-      couleur:      this.nouveauGroupe.couleur,
-      emoji:        this.nouveauGroupe.emoji,
-      codeInvit:    Math.random().toString(36).substring(2,8).toUpperCase(),
-      dateCreation: new Date().toISOString().slice(0,10),
-      membres:      [{ id:1, nom:'Alex Martin', role:'admin', actif:true }],
-      sessions:     [],
-      messages:     []
-    };
-    this.mesgroupes.push(g);
-    this.modalCreerOuvert = false;
+  /* ════════════════════
+     INVITATIONS
+  ════════════════════ */
+
+  chargerInvitations(): void {
+    this.chargementInvitations = true;
+    this.invitationGroupeService.getMesInvitations().subscribe({
+      next: (res) => {
+        this.invitations           = res?.data ?? res ?? [];
+        this.chargementInvitations = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.erreurInvitations     = err?.error?.message || 'Erreur invitations.';
+        this.chargementInvitations = false;
+      }
+    });
   }
 
-  quitterGroupe(id: number): void {
-    this.mesgroupes = this.mesgroupes.filter(g => g.id !== id);
-    if (this.groupeSelectionne?.id === id) this.groupeSelectionne = null;
+  get invitationsEnAttente(): InvitationGroupe[] {
+    return this.invitations.filter(i => i.statut === 'EN_ATTENTE');
   }
 
-  /* ── Inviter ── */
+  get invitationsTraitees(): InvitationGroupe[] {
+    return this.invitations.filter(i => i.statut !== 'EN_ATTENTE');
+  }
+
+  get notificationsNonLues(): number {
+    return this.invitationsEnAttente.length;
+  }
+
+  accepterInvitation(id: number): void {
+    this.invitationGroupeService.accepterInvitation(id).subscribe({
+      next: () => this.chargerTout(),
+      error: (err) => alert(err?.error?.message || 'Erreur acceptation.')
+    });
+  }
+
+  refuserInvitation(id: number): void {
+    this.invitationGroupeService.refuserInvitation(id).subscribe({
+      next: () => this.chargerInvitations(),
+      error: (err) => alert(err?.error?.message || 'Erreur refus.')
+    });
+  }
+
   ouvrirModalInviter(): void {
     this.modalInviterOuvert = true;
-    this.emailInvitation  = '';
-    this.erreurInvitation = '';
+    this.emailInvitation    = '';
+    this.erreurInvitation   = '';
+    this.invitationEnvoyee  = false;
+    this.invitationEnCours  = false;
   }
 
   envoyerInvitation(): void {
+    if (this.invitationEnCours) return;
+
+    this.erreurInvitation  = '';
+    this.invitationEnvoyee = false;
+
     if (!this.emailInvitation.trim()) {
-      this.erreurInvitation = 'Entrez un email ou un nom.';
+      this.erreurInvitation = 'Entrez un email valide.';
       return;
     }
-    // Simulation : ajouter comme membre
-    if (this.groupeSelectionne) {
-      this.groupeSelectionne.membres.push({
-        id:    Date.now(),
-        nom:   this.emailInvitation.trim(),
-        role:  'membre',
-        actif: false
-      });
-    }
-    this.modalInviterOuvert = false;
+    if (!this.groupeSelectionne) return;
+
+    this.invitationEnCours = true;
+
+    this.invitationGroupeService.envoyerInvitation(
+      this.groupeSelectionne.id,
+      this.emailInvitation.trim()
+    ).subscribe({
+      next: () => {
+        this.invitationEnvoyee = true;
+        this.invitationEnCours = false;
+        this.emailInvitation   = '';
+        this.erreurInvitation  = '';
+        setTimeout(() => {
+          this.modalInviterOuvert = false;
+          this.invitationEnvoyee  = false;
+        }, 2500);
+      },
+      error: (err) => {
+        this.invitationEnCours = false;
+        this.invitationEnvoyee = false;
+        this.erreurInvitation  =
+          err?.error?.message || "Impossible d'envoyer l'invitation.";
+      }
+    });
   }
 
   copierCode(code: string): void {
     navigator.clipboard?.writeText(code).catch(() => {});
   }
 
-  /* ── Session groupe ── */
+  /* ════════════════════
+     SESSIONS GROUPE
+  ════════════════════ */
+
+  chargerSessionsDuGroupe(groupeId: number): void {
+    this.groupeService.getSessionsGroupe(groupeId).subscribe({
+      next: (res) => {
+        const data: any[] = res?.data ?? res ?? [];
+        if (!this.groupeSelectionne ||
+            this.groupeSelectionne.id !== groupeId) return;
+        this.groupeSelectionne.sessions =
+          data.map(s => this.mapSession(s, this.groupeSelectionne!.couleur));
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
+  }
+
   ouvrirModalSession(): void {
     this.modalSessionOuvert = true;
-    this.nouvelleSession = { matiere:'', heure:'', fin:'', jour:'Lundi' };
+    this.erreurSession      = '';
+    this.sessionEnCours     = false;
+    this.nouvelleSession    = { matiere:'', heure:'', fin:'', jour:'Lundi' };
   }
 
   creerSessionGroupe(): void {
-    if (!this.nouvelleSession.matiere.trim() || !this.nouvelleSession.heure) return;
+    if (this.sessionEnCours) return;
+
+    this.erreurSession = '';
+    if (!this.nouvelleSession.matiere.trim()) {
+      this.erreurSession = 'Le nom de la session est obligatoire.'; return;
+    }
+    if (!this.nouvelleSession.heure) {
+      this.erreurSession = "L'heure de début est obligatoire."; return;
+    }
     if (!this.groupeSelectionne) return;
-    this.groupeSelectionne.sessions.push({
-      id:      Date.now(),
-      matiere: this.nouvelleSession.matiere,
-      couleur: this.groupeSelectionne.couleur,
-      jour:    this.nouvelleSession.jour,
-      heure:   this.nouvelleSession.heure,
-      fin:     this.nouvelleSession.fin || '—',
-      duree:   '—',
-      statut:  'planifiee',
-      hote:    'Alex'
+
+    this.sessionEnCours = true;
+
+    const nomSaisi = this.nouvelleSession.matiere.trim();
+    const groupeId = this.groupeSelectionne.id;
+
+    // ✅ FIX DATE : calculer le PROCHAIN jour correspondant au choix
+    // Ex: dimanche + "Lundi" → lundi demain (pas lundi passé il y a 6 jours)
+    const jourIndex = this.JOURS.indexOf(this.nouvelleSession.jour); // 0=Lundi...6=Dimanche
+
+    const now        = new Date();
+    const jourActuel = now.getDay(); // 0=Dim, 1=Lun...6=Sam
+
+    // Convertir: JOURS[0]=Lundi→getDay()=1, JOURS[6]=Dimanche→getDay()=0
+    const jourCibleGetDay = jourIndex === 6 ? 0 : jourIndex + 1;
+
+    // Nb de jours pour atteindre le prochain jourCible
+    let diff = jourCibleGetDay - jourActuel;
+    if (diff <= 0) diff += 7; // jamais dans le passé → toujours futur
+
+    const jourCible = new Date(now);
+    jourCible.setDate(now.getDate() + diff);
+    jourCible.setHours(0, 0, 0, 0);
+
+    // Appliquer heure début
+    const [hD, mD] = this.nouvelleSession.heure.split(':').map(Number);
+    const debut = new Date(jourCible);
+    debut.setHours(hD, mD, 0, 0);
+
+    // Calculer fin
+    let fin = new Date(debut);
+    fin.setHours(debut.getHours() + 1, debut.getMinutes(), 0, 0);
+
+    if (this.nouvelleSession.fin) {
+      const [hF, mF] = this.nouvelleSession.fin.split(':').map(Number);
+      const finTemp  = new Date(jourCible);
+      finTemp.setHours(hF, mF, 0, 0);
+      if (finTemp > debut) fin = finTemp;
+    }
+
+    // Anti-chevauchement
+    const chevauchement = this.groupeSelectionne!.sessions.some(s => {
+      const sDebut = this.hEnMin(s.heure);
+      const sFin   = this.hEnMin(s.fin);
+      const nDebut = this.hEnMin(this.nouvelleSession.heure);
+      const nFin   = this.nouvelleSession.fin
+        ? this.hEnMin(this.nouvelleSession.fin)
+        : nDebut + 60;
+      if (s.jour !== this.nouvelleSession.jour) return false;
+      return nDebut < sFin && nFin > sDebut;
     });
-    this.modalSessionOuvert = false;
+
+    if (chevauchement) {
+      this.erreurSession  = 'Ce créneau chevauche une session existante.';
+      this.sessionEnCours = false;
+      return;
+    }
+
+    const dureePrevueMin = Math.round((fin.getTime() - debut.getTime()) / 60000);
+
+    const payload = {
+      nom:           nomSaisi,
+      debut:         this.formatDateLocale(debut),
+      fin:           this.formatDateLocale(fin),
+      dureePrevueMin
+    };
+
+    // Étape 1 : créer la session
+    this.groupeService.creerSession(payload).subscribe({
+      next: (res) => {
+        const sessionCreee = res?.data ?? res;
+
+        if (!sessionCreee?.id) {
+          this.erreurSession  = 'Session créée mais ID manquant.';
+          this.sessionEnCours = false;
+          return;
+        }
+
+        const sessionId = sessionCreee.id;
+        this.sessionNomCache.set(sessionId, nomSaisi);
+        this.sauvegarderCacheNoms();
+
+        // Étape 2 : partager dans le groupe
+        this.groupeService.partagerSession(sessionId, groupeId).subscribe({
+          next: (resPartage) => {
+            const partage = resPartage?.data ?? resPartage;
+            if (partage?.id)        this.sessionNomCache.set(partage.id, nomSaisi);
+            if (partage?.sessionId) this.sessionNomCache.set(partage.sessionId, nomSaisi);
+            this.sauvegarderCacheNoms();
+
+            this.chargerSessionsDuGroupe(groupeId);
+            this.sessionEnCours     = false;
+            this.modalSessionOuvert = false;
+            this.nouvelleSession    = { matiere: '', heure: '', fin: '', jour: 'Lundi' };
+          },
+          error: (err) => {
+            this.sessionEnCours = false;
+            this.erreurSession  = err?.error?.message || 'Erreur lors du partage.';
+          }
+        });
+      },
+      error: (err) => {
+        this.sessionEnCours = false;
+        this.erreurSession  = err?.error?.message || 'Erreur création session.';
+      }
+    });
   }
 
-  /* ── Chat ── */
+  private sauvegarderCacheNoms(): void {
+    try {
+      const obj: Record<string, string> = {};
+      this.sessionNomCache.forEach((v, k) => { obj[String(k)] = v; });
+      const json = JSON.stringify(obj);
+      localStorage.setItem('session_nom_cache', json);
+      localStorage.setItem('session_nom_cache_persist', json);
+    } catch {}
+  }
+
+  private restaurerCacheNoms(): void {
+    try {
+      const normal  = localStorage.getItem('session_nom_cache');
+      const persist = localStorage.getItem('session_nom_cache_persist');
+      const source  = normal ?? persist;
+      if (source) {
+        const obj = JSON.parse(source);
+        this.sessionNomCache = new Map(
+          Object.entries(obj).map(([k, v]) => [Number(k), v as string])
+        );
+        if (!normal && persist) {
+          localStorage.setItem('session_nom_cache', persist);
+        }
+      }
+    } catch {}
+  }
+
+  private formatDateLocale(date: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}` +
+           `T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
+  }
+
+  /* ════════════════════
+     CHAT
+  ════════════════════ */
+
+  ouvrirChat(): void {
+    if (!this.groupeSelectionne) return;
+    this.panneauActif       = 'chat';
+    this.notificationsChat  = [];
+    this.nouvellesNotifChat = false;
+    this.chargerMessages(this.groupeSelectionne.id);
+    this.demarrerPollChat(this.groupeSelectionne.id);
+    this.marquerNotifsChatLues();
+  }
+
+  ouvrirChatDepuisNotif(notif: any): void {
+    const groupeNomExtrait =
+      this.extraireNomGroupeDepuisMessage(notif.message || '');
+
+    let groupe = this.mesgroupes.find(g =>
+      g.nom === groupeNomExtrait ||
+      g.id  === notif.groupeId   ||
+      g.id  === notif.idGroupe
+    );
+
+    if (!groupe && this.mesgroupes.length > 0) groupe = this.mesgroupes[0];
+
+    if (!groupe) {
+      this.chargerTout();
+      setTimeout(() => this.ouvrirChatDepuisNotif(notif), 1500);
+      return;
+    }
+
+    this.notificationsChat  = this.notificationsChat.filter(n => n.id !== notif.id);
+    this.nouvellesNotifChat = this.notificationsChat.length > 0;
+
+    this.ongletActif        = 'mes-groupes';
+    this.groupeSelectionne  = groupe;
+    this.panneauActif       = 'chat';
+
+    this.chargerDetailGroupe(groupe);
+    this.chargerMessages(groupe.id);
+    this.demarrerPollChat(groupe.id);
+    this.marquerNotifsChatLues();
+
+    setTimeout(() => {
+      this.defilementNecessaire = true;
+      this.cdr.detectChanges();
+    }, 300);
+  }
+
+  private extraireNomGroupeDepuisMessage(message: string): string {
+    const match = message.match(/dans\s+"([^"]+)"/);
+    return match ? match[1] : '';
+  }
+
+  chargerMessages(groupeId: number): void {
+    this.chargementMessages = true;
+    this.messageService.getMessages(groupeId).subscribe({
+      next: (res) => {
+        const data: any[] = res?.data ?? res ?? [];
+        if (!this.groupeSelectionne ||
+            this.groupeSelectionne.id !== groupeId) return;
+        this.groupeSelectionne.messages = data.map(m => this.mapMessage(m));
+        this.chargementMessages   = false;
+        this.defilementNecessaire = true;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.chargementMessages = false; }
+    });
+  }
+
+  demarrerPollChat(groupeId: number): void {
+    this.arreterPollChat();
+    this.chatPollInterval = setInterval(() => {
+      if (!this.groupeSelectionne ||
+          this.groupeSelectionne.id !== groupeId ||
+          this.panneauActif !== 'chat') {
+        this.arreterPollChat(); return;
+      }
+      this.rafraichirMessages(groupeId);
+    }, 5000);
+  }
+
+  arreterPollChat(): void {
+    if (this.chatPollInterval) {
+      clearInterval(this.chatPollInterval);
+      this.chatPollInterval = null;
+    }
+  }
+
+  rafraichirMessages(groupeId: number): void {
+    this.messageService.getMessages(groupeId).subscribe({
+      next: (res) => {
+        const data: any[] = res?.data ?? res ?? [];
+        if (!this.groupeSelectionne ||
+            this.groupeSelectionne.id !== groupeId) return;
+        const avant = this.groupeSelectionne.messages.length;
+        this.groupeSelectionne.messages = data.map(m => this.mapMessage(m));
+        if (this.groupeSelectionne.messages.length > avant)
+          this.defilementNecessaire = true;
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
+  }
+
   envoyerMessage(): void {
-    if (!this.nouveauMessage.trim() || !this.groupeSelectionne) return;
-    this.groupeSelectionne.messages.push({
-      id:         Date.now(),
-      auteur:     'Moi',
-      texte:      this.nouveauMessage.trim(),
-      horodatage: new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
-      moi:        true
+    if (!this.nouveauMessage.trim() ||
+        !this.groupeSelectionne ||
+        this.envoyageMessage) return;
+
+    const contenu  = this.nouveauMessage.trim();
+    const groupeId = this.groupeSelectionne.id;
+    this.envoyageMessage = true;
+    this.nouveauMessage  = '';
+
+    this.messageService.envoyerMessage(groupeId, contenu).subscribe({
+      next: (res) => {
+        const msg = res?.data ?? res;
+        if (msg && this.groupeSelectionne?.id === groupeId) {
+          this.groupeSelectionne.messages.push(this.mapMessage(msg));
+          this.defilementNecessaire = true;
+        }
+        this.envoyageMessage = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.envoyageMessage = false;
+        this.nouveauMessage  = contenu;
+        alert(err?.error?.message || 'Erreur envoi message.');
+      }
     });
-    this.nouveauMessage = '';
   }
 
-  /* ── Notifications ── */
-  marquerLu(n: Notification): void { n.lu = true; }
-  toutMarquerLu(): void { this.notifications.forEach(n => n.lu = true); }
-
-  /* ── Rejoindre découverte ── */
-  rejoindreSuggestion(id: number): void {
-    const g = this.groupesDecouverte.find(x => x.id === id);
-    if (!g) return;
-    this.mesgroupes.push({
-      id: g.id, nom: g.nom, description: g.description,
-      couleur: g.couleur, emoji: g.emoji,
-      codeInvit: Math.random().toString(36).substring(2,8).toUpperCase(),
-      dateCreation: new Date().toISOString().slice(0,10),
-      membres:  [{ id:1, nom:'Alex Martin', role:'membre', actif:true }],
-      sessions: [], messages: []
+  supprimerMessage(messageId: number): void {
+    if (!this.groupeSelectionne) return;
+    const groupeId = this.groupeSelectionne.id;
+    this.messageService.supprimerMessage(groupeId, messageId).subscribe({
+      next: () => {
+        if (this.groupeSelectionne)
+          this.groupeSelectionne.messages =
+            this.groupeSelectionne.messages.filter(m => m.id !== messageId);
+        this.cdr.detectChanges();
+      },
+      error: (err) => alert(err?.error?.message || 'Erreur suppression.')
     });
-    this.groupesDecouverte = this.groupesDecouverte.filter(x => x.id !== id);
   }
 
-  /* ── Utilitaires ── */
+  /* ════════════════════
+     NOTIFICATIONS CHAT
+  ════════════════════ */
+
+  demarrerPollNotifications(): void {
+    this.verifierNotificationsChat();
+    this.notifPollInterval = setInterval(() => {
+      this.verifierNotificationsChat();
+    }, 8000);
+  }
+
+  arreterPollNotifications(): void {
+    if (this.notifPollInterval) {
+      clearInterval(this.notifPollInterval);
+      this.notifPollInterval = null;
+    }
+  }
+
+  verifierNotificationsChat(): void {
+    this.http.get<any>(
+      `${environment.apiUrl}/notifications/non-lues`
+    ).subscribe({
+      next: (res) => {
+        const data: any[]  = res?.data ?? res ?? [];
+        const msgsGroupe    = data.filter(
+          (n: any) => n.type === 'MESSAGE_GROUPE'
+        );
+        this.notificationsChat  = msgsGroupe;
+        this.nouvellesNotifChat = msgsGroupe.length > 0;
+
+        if (this.groupeSelectionne &&
+            this.panneauActif === 'chat' &&
+            msgsGroupe.length > 0) {
+          this.rafraichirMessages(this.groupeSelectionne.id);
+          this.marquerNotifsChatLues();
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
+  }
+
+  marquerNotifsChatLues(): void {
+    this.http.patch<any>(
+      `${environment.apiUrl}/notifications/lire-toutes`, {}
+    ).subscribe({
+      next: () => {
+        this.nouvellesNotifChat = false;
+        this.notificationsChat  = [];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.nouvellesNotifChat = false;
+        this.notificationsChat  = [];
+      }
+    });
+  }
+
+  private defilerVersLeBas(): void {
+    try {
+      this.chatFin?.nativeElement?.scrollIntoView({ behavior: 'smooth' });
+    } catch {}
+  }
+
+  /* ════════════════════
+     MAPPERS
+  ════════════════════ */
+
+  private mapMessage(m: any): MessageChat {
+    const d = new Date(m.envoyeLe);
+    return {
+      id:         m.id,
+      auteur:     m.auteurNom || 'Inconnu',
+      auteurId:   m.auteurId  || 0,
+      texte:      m.contenu,
+      horodatage: `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`,
+      moi:        m.auteurId === this.monUserId
+    };
+  }
+
+  private mapSession(s: any, couleur: string): SessionGroupe {
+    const sessionId = s.sessionId ?? s.id;
+    const partageId = s.id;
+
+    const nomBDD   = s.sessionNom ?? null;
+    const nomCache =
+      this.sessionNomCache.get(sessionId) ??
+      this.sessionNomCache.get(partageId) ??
+      null;
+
+    let nom = nomBDD
+           ?? nomCache
+           ?? s.sessionMatiereNom
+           ?? s.matiereNom
+           ?? 'Session';
+
+    if (nom === 'Session libre') {
+      nom = nomBDD ?? nomCache ?? 'Session';
+    }
+
+    return {
+      id:      sessionId,
+      matiere: nom,
+      couleur,
+      jour:    this.extraireJourFR(s.debut || s.sessionDebut),
+      heure:   this.extraireHeure(s.debut  || s.sessionDebut),
+      fin:     this.extraireHeure(s.fin    || s.sessionFin),
+      duree:   this.calculerDureeDepuisDates(
+                 s.debut || s.sessionDebut,
+                 s.fin   || s.sessionFin
+               ),
+      statut:  this.mapStatutSession(s.statut || s.sessionStatut),
+      hote:    'Membre'
+    };
+  }
+
+  private mapMembre(m: any): Membre {
+    return {
+      id:    m.utilisateurId ?? m.id,
+      nom:   m.nom || m.utilisateurNom || 'Membre',
+      role:  (m.role === 'PROPRIETAIRE' ? 'admin' : 'membre') as 'admin'|'membre',
+      actif: true
+    };
+  }
+
+  /* ════════════════════
+     UTILITAIRES
+  ════════════════════ */
+
   initiales(nom: string): string {
-    return nom.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+    return (nom || '?')
+      .split(' ').map(n => n[0]).join('')
+      .toUpperCase().slice(0, 2);
   }
 
   libelleStatut(s: string): string {
-    const m: Record<string,string> = { 'planifiee':'Planifiee','en-cours':'En cours','terminee':'Terminee' };
+    const m: Record<string,string> = {
+      planifiee:'Planifiée','en-cours':'En cours',terminee:'Terminée'
+    };
     return m[s] ?? s;
   }
 
-  iconeNotif(type: string): string {
-    const m: Record<string,string> = {
-      'invitation':'👋','session':'📅','commentaire':'💬','membre':'👤'
-    };
-    return m[type] ?? '🔔';
+  iconeStatutInvit(statut: string): string {
+    if (statut === 'ACCEPTEE') return '✅';
+    if (statut === 'REFUSEE')  return '❌';
+    return '⏳';
+  }
+
+  mapStatutSession(s: string): 'planifiee'|'en-cours'|'terminee' {
+    const u = (s||'').toUpperCase();
+    if (u === 'EN_COURS') return 'en-cours';
+    if (u === 'TERMINEE') return 'terminee';
+    return 'planifiee';
+  }
+
+  private extraireHeure(dt: string): string {
+    if (!dt) return '--:--';
+    const d = new Date(dt);
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+
+  private extraireJourFR(dt: string): string {
+    if (!dt) return '—';
+    const j = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    return j[new Date(dt).getDay()];
+  }
+
+  private calculerDureeDepuisDates(debut: string, fin: string): string {
+    if (!debut||!fin) return '—';
+    const diff = Math.max(
+      0,
+      Math.round((new Date(fin).getTime()-new Date(debut).getTime())/60000)
+    );
+    const h = Math.floor(diff/60);
+    const m = diff%60;
+    if (h===0) return `${m}min`;
+    if (m===0) return `${h}h`;
+    return `${h}h${String(m).padStart(2,'0')}`;
+  }
+
+  private hEnMin(h: string): number {
+    if (!h || h === '--:--') return 0;
+    const [hh, mm] = h.split(':').map(Number);
+    return hh * 60 + (mm || 0);
   }
 }

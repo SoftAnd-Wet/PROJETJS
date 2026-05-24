@@ -1,9 +1,7 @@
-/* ── Hôte transparent — pas de display:block qui crée un gap ── */
 :host {
   display: contents;
 }
 
-/* ── Coque principale : fixed pour coller au bord gauche ── */
 .sidebar {
   width: 240px;
   position: fixed;
@@ -20,51 +18,45 @@
   box-shadow: 2px 0 20px rgba(94, 53, 177, 0.08);
 }
 
-/* ── Mode réduit ── */
-.sidebar.reduit {
-  width: 68px;
+/* Mode réduit */
+.sidebar.reduite {
+  width: 72px;
 }
 
-.sidebar.reduit .logo-texte,
-.sidebar.reduit .texte-nav,
-.sidebar.reduit .libelle-groupe,
-.sidebar.reduit .badge-nav,
-.sidebar.reduit .zone-upgrade,
-.sidebar.reduit .info-utilisateur,
-.sidebar.reduit .btn-deconnexion {
+.sidebar.reduite .logo-texte,
+.sidebar.reduite .titre-groupe,
+.sidebar.reduite .libelle-item,
+.sidebar.reduite .badge-nav,
+.sidebar.reduite .info-utilisateur {
   display: none;
 }
 
-.sidebar.reduit .item-nav {
-  justify-content: center;
-  padding: 10px 0;
-}
-
-.sidebar.reduit .logo {
-  justify-content: center;
-}
-
-.sidebar.reduit .sidebar-entete {
-  justify-content: center;
-  padding: 18px 0 14px;
-}
-
-.sidebar.reduit .pied-utilisateur {
+.sidebar.reduite .item-nav {
   justify-content: center;
   padding: 12px 0;
 }
 
-/* ── En-tête ── */
-.sidebar-entete {
+.sidebar.reduite .entete-sidebar {
+  justify-content: center;
+  padding: 18px 8px 14px;
+}
+
+.sidebar.reduite .pied-utilisateur {
+  justify-content: center;
+  padding: 12px 8px;
+}
+
+/* En-tête */
+.entete-sidebar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 16px 16px;
+  padding: 18px 16px 14px;
   border-bottom: 1px solid #e8eaf0;
   flex-shrink: 0;
 }
 
-.logo {
+.logo-zone {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -72,23 +64,34 @@
 }
 
 .logo-icone {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #5e35b1 0%, #7c4dff 100%);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(94, 53, 177, 0.45);
+  font-size: 20px;
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(94, 53, 177, 0.35);
 }
 
-.logo-texte {
-  font-size: 16px;
+.logo-texte h2 {
+  margin: 0;
+  font-size: 22px;
   font-weight: 800;
   color: #1a1a2e;
-  letter-spacing: -0.3px;
-  white-space: nowrap;
+  line-height: 1.1;
+}
+
+.logo-texte span {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
 }
 
 .btn-toggle {
@@ -101,7 +104,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
   transition: background 0.18s, color 0.18s;
 }
 
@@ -110,56 +112,54 @@
   color: #5e35b1;
 }
 
-/* ── Navigation ── */
-.sidebar-nav {
+/* Contenu navigation */
+.contenu-sidebar {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 10px 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  padding: 14px 12px 10px;
 }
 
-.sidebar-nav::-webkit-scrollbar {
-  width: 3px;
+.contenu-sidebar::-webkit-scrollbar {
+  width: 4px;
 }
 
-.sidebar-nav::-webkit-scrollbar-thumb {
+.contenu-sidebar::-webkit-scrollbar-thumb {
   background: #e8eaf0;
-  border-radius: 99px;
+  border-radius: 999px;
 }
 
 .groupe-nav {
-  margin-bottom: 6px;
+  margin-bottom: 14px;
 }
 
-.libelle-groupe {
-  display: block;
-  font-size: 10px;
+.titre-groupe {
+  margin: 0 0 8px;
+  padding: 0 4px;
+  font-size: 12px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.1px;
   color: #6b7280;
-  padding: 8px 10px 4px;
-  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
 }
 
 .item-nav {
+  width: 100%;
+  border: none;
+  background: transparent;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 10px;
-  border-radius: 10px;
+  padding: 11px 12px;
+  border-radius: 12px;
   cursor: pointer;
   color: #6b7280;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 500;
+  text-align: left;
   transition: all 0.18s ease;
-  text-decoration: none;
-  white-space: nowrap;
-  overflow: hidden;
   position: relative;
+  margin-bottom: 6px;
 }
 
 .item-nav:hover {
@@ -174,32 +174,28 @@
 }
 
 .item-nav.actif::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
-  top: 15%;
-  bottom: 15%;
+  top: 18%;
+  bottom: 18%;
   width: 3px;
+  border-radius: 0 4px 4px 0;
   background: #5e35b1;
-  border-radius: 0 3px 3px 0;
 }
 
-.item-nav.actif .icone-nav {
-  color: #5e35b1;
-}
-
-.icone-nav {
+.icone-item {
   width: 20px;
   height: 20px;
+  min-width: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  transition: color 0.18s;
 }
 
-.texte-nav {
+.libelle-item {
   flex: 1;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -211,80 +207,17 @@
   color: #ffffff;
   font-size: 10px;
   font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 20px;
-  line-height: 1.5;
+  padding: 3px 8px;
+  border-radius: 999px;
+  line-height: 1.3;
 }
 
 .badge-nav.nouveau {
   background: linear-gradient(135deg, #00c853, #00e676);
-  box-shadow: 0 2px 6px rgba(0, 200, 83, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 200, 83, 0.35);
 }
 
-/* ── Carte Upgrade ── */
-.zone-upgrade {
-  padding: 10px 12px;
-  flex-shrink: 0;
-}
-
-.carte-upgrade {
-  position: relative;
-  background: linear-gradient(135deg, #5e35b1 0%, #7c4dff 100%);
-  border-radius: 14px;
-  padding: 18px 14px;
-  color: #ffffff;
-  text-align: center;
-  overflow: hidden;
-}
-
-.upgrade-lueur {
-  position: absolute;
-  top: -24px;
-  right: -24px;
-  width: 80px;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.13);
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.upgrade-emoji {
-  font-size: 26px;
-  margin-bottom: 6px;
-}
-
-.upgrade-titre {
-  font-size: 13px;
-  font-weight: 800;
-  margin-bottom: 5px;
-}
-
-.upgrade-desc {
-  font-size: 11px;
-  opacity: 0.85;
-  line-height: 1.45;
-  margin-bottom: 12px;
-}
-
-.upgrade-btn {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1.5px solid rgba(255, 255, 255, 0.55);
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 8px 0;
-  border-radius: 8px;
-  cursor: pointer;
-  width: 100%;
-  transition: background 0.2s;
-  font-family: inherit;
-}
-
-.upgrade-btn:hover {
-  background: rgba(255, 255, 255, 0.35);
-}
-
-/* ── Pied utilisateur ── */
+/* Pied utilisateur */
 .pied-utilisateur {
   display: flex;
   align-items: center;
@@ -292,25 +225,41 @@
   padding: 14px;
   border-top: 1px solid #e8eaf0;
   flex-shrink: 0;
-  overflow: hidden;
+  background: #fff;
 }
 
 .avatar-utilisateur {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #5e35b1;
-  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+  color: #6d28d9;
+  border: 1px solid rgba(109, 40, 217, 0.12);
+}
+
+.avatar-user-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-user-svg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .info-utilisateur {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
 }
 
 .nom-utilisateur {
+  margin: 0;
   font-size: 13px;
   font-weight: 700;
   color: #1a1a2e;
@@ -320,8 +269,12 @@
 }
 
 .role-utilisateur {
+  margin: 2px 0 0;
   font-size: 11px;
   color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .btn-deconnexion {
@@ -334,11 +287,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
   transition: background 0.18s, color 0.18s;
 }
 
 .btn-deconnexion:hover {
   background: rgba(244, 67, 54, 0.08);
   color: #f44336;
+}
+.btn-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 8px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.btn-toggle:hover {
+  background: #f3f4f6;
+  color: #374151;
 }

@@ -1,0 +1,93 @@
+<div class="page">
+  <div class="card">
+
+    <div class="logo">
+      <div class="logo-icon">S</div>
+      <h1>StudyPlanner</h1>
+    </div>
+
+    <h2>Créer un compte</h2>
+    <p class="subtitle">Commencez à planifier vos études dès aujourd'hui</p>
+
+    <div class="erreur" *ngIf="erreur">
+      <span>⚠</span> {{ erreur }}
+    </div>
+
+    <form (ngSubmit)="onSubmit()">
+
+      <div class="champ">
+        <label>Nom complet</label>
+        <input
+          type="text"
+          [(ngModel)]="form.nom"
+          name="nom"
+          required
+          placeholder="Votre nom"
+        />
+      </div>
+
+      <div class="champ">
+        <label>Email</label>
+        <input
+          type="email"
+          [(ngModel)]="form.email"
+          name="email"
+          required
+          placeholder="votre@email.com"
+        />
+      </div>
+
+      <div class="champ">
+        <label>Mot de passe</label>
+        <input
+          type="password"
+          [(ngModel)]="form.motDePasse"
+          name="motDePasse"
+          required
+          placeholder="Min. 6 caractères"
+        />
+      </div>
+
+      <div class="champ">
+        <label>Confirmer le mot de passe</label>
+        <input
+          type="password"
+          [(ngModel)]="form.confirmMotDePasse"
+          name="confirmMotDePasse"
+          required
+          placeholder="Répétez le mot de passe"
+        />
+      </div>
+
+      <div class="force-mdp" *ngIf="form.motDePasse.length > 0">
+        <div class="barre">
+          <div
+            class="remplissage"
+            [style.width.%]="(form.motDePasse.length / 12) * 100"
+            [class.faible]="form.motDePasse.length < 6"
+            [class.moyen]="form.motDePasse.length >= 6 && form.motDePasse.length < 10"
+            [class.fort]="form.motDePasse.length >= 10">
+          </div>
+        </div>
+        <span class="force-label"
+          [class.faible]="form.motDePasse.length < 6"
+          [class.moyen]="form.motDePasse.length >= 6 && form.motDePasse.length < 10"
+          [class.fort]="form.motDePasse.length >= 10">
+          {{ form.motDePasse.length < 6 ? 'Faible' : form.motDePasse.length < 10 ? 'Moyen' : 'Fort' }}
+        </span>
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="chargement">
+        <span *ngIf="!chargement">Créer mon compte</span>
+        <span *ngIf="chargement" class="spinner"></span>
+      </button>
+
+    </form>
+
+    <p class="lien-bas">
+      Déjà un compte ?
+      <a routerLink="/login">Se connecter</a>
+    </p>
+
+  </div>
+</div>

@@ -1,0 +1,53 @@
+<div class="page">
+  <div class="card">
+
+    <div class="logo">
+      <div class="logo-icon">S</div>
+      <h1>StudyPlanner</h1>
+    </div>
+
+    <h2>Connexion</h2>
+    <p class="subtitle">Bon retour ! Connectez-vous à votre compte</p>
+
+    <div class="erreur" *ngIf="erreur">
+      <span>⚠</span> {{ erreur }}
+    </div>
+
+    <form (ngSubmit)="onSubmit()">
+
+      <div class="champ">
+        <label>Email</label>
+        <input
+          type="email"
+          [(ngModel)]="form.email"
+          name="email"
+          required
+          placeholder="votre@email.com"
+        />
+      </div>
+
+      <div class="champ">
+        <label>Mot de passe</label>
+        <input
+          type="password"
+          [(ngModel)]="form.motDePasse"
+          name="motDePasse"
+          required
+          placeholder="••••••••"
+        />
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="chargement">
+        <span *ngIf="!chargement">Se connecter</span>
+        <span *ngIf="chargement" class="spinner"></span>
+      </button>
+
+    </form>
+
+    <p class="lien-bas">
+      Pas encore de compte ?
+      <a routerLink="/register">S'inscrire</a>
+    </p>
+
+  </div>
+</div>

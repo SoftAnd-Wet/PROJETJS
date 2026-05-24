@@ -1,26 +1,34 @@
-// profil.component.ts
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { SidebarComponent } from '../sidebar/sidebar';
+import { UserService } from '../../services/user.service';
+import { DisponibiliteService } from '../../services/disponibilite.service';
+import { MatiereService } from '../../services/matiere.service';
+import { DashboardService } from '../../services/dashboard.service';
+import { Router } from '@angular/router';
 
 export interface Disponibilite {
-  jour:   string;
-  actif:  boolean;
-  debut:  string;
-  fin:    string;
+  id?:   number;
+  jour:  string;
+  actif: boolean;
+  debut: string;
+  fin:   string;
 }
 
 export interface Matiere {
-  nom:      string;
-  couleur:  string;
-  priorite: 'haute' | 'moyenne' | 'basse';
+  id?:                 number;
+  nom:                 string;
+  couleur:             string;
+  priorite:            number;
+  objectifHebdoHeures?: number;
 }
 
 @Component({
   selector:    'app-profil',
   standalone:  true,
-  imports:     [CommonModule, FormsModule, SidebarComponent],
+  imports:     [CommonModule, FormsModule, SidebarComponent, RouterLink],
   templateUrl: './profil.html',
   styleUrls:   ['./profil.css']
 })
@@ -28,74 +36,200 @@ export class ProfilComponent implements OnInit {
 
   sidebarReduite = false;
   pageActive     = 'profil';
+  modeEdition    = false;
+  messageSucces  = '';
+  chargement     = true;
 
-  /* ── Mode édition ── */
-  modeEdition   = false;
-  messageSucces = '';
+  apercuAvatar   = '';
+  erreurUpload   = '';
+  tailleFichier  = '';
+  nomFichier     = '';
 
-  /* ── Upload avatar ── */
-  apercuAvatar  = '';         // base64 de la prévisualisation
-  erreurUpload  = '';
-  tailleFichier = '';         // ex: '1.2 Mo'
-  nomFichier    = '';         // nom du fichier choisi
-
-  /* ── 1. Informations utilisateur ── */
   utilisateur = {
-    nom:    'Alex Martin',
-    email:  'alex.martin@email.com',
-    role:   'Etudiant',
-    avatar: 'https://i.pravatar.cc/120?img=5',
-    dateInscription: '1 janvier 2025'
+    id:              0,
+    nom:             '',
+    email:           '',
+    role:            '',
+    dateInscription: ''
   };
 
-  /* Copie pour l'édition */
-  formulaire = { ...this.utilisateur, motDePasse: '', confirmMotDePasse: '' };
+  formulaire = {
+    nom:               '',
+    email:             '',
+    ancienMotDePasse:  '',
+    motDePasse:        '',
+    confirmMotDePasse: ''
+  };
+
   erreurFormulaire = '';
 
-  /* ── 2. Objectifs d'étude ── */
-  objectifHebdo = 20;        // heures par semaine
-  objectifTemp  = 20;        // valeur temporaire en édition
-  heuresRealisees = 12;      // cette semaine
+  objectifHebdo   = 0;
+  objectifTemp    = 0;
+  heuresRealisees = 0;
 
   get pctObjectif(): number {
-    return Math.min(Math.round((this.heuresRealisees / this.objectifHebdo) * 100), 100);
+    if (!this.objectifHebdo) return 0;
+    return Math.min(
+      Math.round((this.heuresRealisees / this.objectifHebdo) * 100),
+      100
+    );
   }
 
-  /* ── 3. Disponibilités ── */
-  disponibilites: Disponibilite[] = [
-    { jour:'Lundi',    actif:true,  debut:'18:00', fin:'21:00' },
-    { jour:'Mardi',    actif:true,  debut:'17:00', fin:'20:00' },
-    { jour:'Mercredi', actif:true,  debut:'14:00', fin:'18:00' },
-    { jour:'Jeudi',    actif:false, debut:'',      fin:''      },
-    { jour:'Vendredi', actif:true,  debut:'18:00', fin:'22:00' },
-    { jour:'Samedi',   actif:true,  debut:'09:00', fin:'13:00' },
-    { jour:'Dimanche', actif:false, debut:'',      fin:''      },
+  readonly JOURS = [
+    'Lundi','Mardi','Mercredi','Jeudi',
+    'Vendredi','Samedi','Dimanche'
   ];
 
-  /* ── 4. Matières et priorités ── */
-  matieres: Matiere[] = [
-    { nom:'Mathematiques',   couleur:'#7c4dff', priorite:'haute'   },
-    { nom:'Algorithmes',     couleur:'#1e88e5', priorite:'haute'   },
-    { nom:'Base de donnees', couleur:'#00bcd4', priorite:'moyenne' },
-    { nom:'IA et ML',        couleur:'#ff9100', priorite:'moyenne' },
-    { nom:'Reseaux',         couleur:'#f44336', priorite:'basse'   },
+  disponibilites: Disponibilite[] = this.JOURS.map(j => ({
+    jour: j, actif: false, debut: '09:00', fin: '12:00'
+  }));
+
+  matieres: Matiere[] = [];
+
+  readonly COULEURS = [
+    '#7c4dff','#1e88e5','#00bcd4','#00c853',
+    '#ff9100','#f44336','#e91e63','#9c27b0'
   ];
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  constructor(
+    private userService:          UserService,
+    private disponibiliteService: DisponibiliteService,
+    private matiereService:       MatiereService,
+    private dashboardService:     DashboardService,
+    private router:               Router,
+    private cdr:                  ChangeDetectorRef
+  ) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.router.navigate(['/login']);
+      return;
+    }
+    this.chargerProfil();
+    this.chargerDisponibilites();
+    this.chargerMatieres();
+    this.chargerHeuresRealisees();
+  }
 
-  /* ── Ouvrir / Fermer édition ── */
+  /* ════════════════════
+     CHARGEMENT
+  ════════════════════ */
+
+  chargerProfil(): void {
+    this.chargement = true;
+    this.userService.getMonProfil().subscribe({
+      next: (res) => {
+        const u = res?.data ?? res;
+        if (!u || !u.nom) {
+          this.chargement = false;
+          this.cdr.detectChanges();
+          return;
+        }
+        this.utilisateur = {
+          id:              u.id    || 0,
+          nom:             u.nom   || '',
+          email:           u.email || '',
+          role:            u.role === 'ADMINISTRATEUR' ? 'Administrateur' : 'Étudiant',
+          dateInscription: this.formatDate(u.dateInscription)
+        };
+        this.chargement = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.chargement = false;
+        this.cdr.detectChanges();
+        if (err.status === 401 || err.status === 403) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          this.router.navigate(['/login']);
+        }
+      }
+    });
+  }
+
+  chargerDisponibilites(): void {
+    this.disponibiliteService.getMesDisponibilites().subscribe({
+      next: (res) => {
+        const disposBD: any[] = res?.data ?? res ?? [];
+        this.disponibilites = this.JOURS.map(jour => {
+          const trouvee = disposBD.find(
+            (d: any) => d.jour?.toLowerCase() === jour.toLowerCase()
+          );
+          return {
+            id:    trouvee?.id,
+            jour,
+            actif: !!trouvee,
+            debut: trouvee?.heureDebut
+              ? trouvee.heureDebut.substring(0, 5) : '09:00',
+            fin: trouvee?.heureFin
+              ? trouvee.heureFin.substring(0, 5) : '12:00'
+          };
+        });
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Erreur disponibilités:', err);
+      }
+    });
+  }
+
+  chargerMatieres(): void {
+    this.matiereService.getMesMatieres().subscribe({
+      next: (res) => {
+        const liste: any[] = res?.data ?? res ?? [];
+        this.matieres = liste.map((m: any, i: number) => ({
+          id:                  m.id,
+          nom:                 m.nom,
+          couleur:             this.COULEURS[i % this.COULEURS.length],
+          priorite:            m.priorite,
+          objectifHebdoHeures: m.objectifHebdoHeures
+        }));
+        this.objectifHebdo = this.matieres.reduce(
+          (acc, m) => acc + (m.objectifHebdoHeures || 0), 0
+        );
+        localStorage.setItem('objectif_hebdo_heures', String(this.objectifHebdo || 20));
+        this.objectifTemp = this.objectifHebdo;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Erreur matières:', err);
+      }
+    });
+  }
+
+  chargerHeuresRealisees(): void {
+    this.dashboardService.getDashboard().subscribe({
+      next: (res) => {
+        const data = res?.data ?? res;
+        const minutes = data?.tempsSemainMin || 0;
+        this.heuresRealisees = Math.round((minutes / 60) * 10) / 10;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.heuresRealisees = 0;
+      }
+    });
+  }
+
+  /* ════════════════════
+     ÉDITION
+  ════════════════════ */
+
   ouvrirEdition(): void {
     this.formulaire = {
-      ...this.utilisateur,
-      motDePasse: '',
+      nom:               this.utilisateur.nom,
+      email:             this.utilisateur.email,
+      ancienMotDePasse:  '',
+      motDePasse:        '',
       confirmMotDePasse: ''
     };
-    this.erreurFormulaire = '';
     this.objectifTemp     = this.objectifHebdo;
+    this.erreurFormulaire = '';
     this.apercuAvatar     = '';
     this.erreurUpload     = '';
+    this.nomFichier       = '';
+    this.tailleFichier    = '';
     this.modeEdition      = true;
   }
 
@@ -104,15 +238,15 @@ export class ProfilComponent implements OnInit {
     this.erreurFormulaire = '';
   }
 
-  /* ── Sauvegarder ── */
   sauvegarder(): void {
-    // Validation
+    this.erreurFormulaire = '';
+
     if (!this.formulaire.nom.trim()) {
       this.erreurFormulaire = 'Le nom est obligatoire.';
       return;
     }
-    if (!this.formulaire.email.trim() || !this.formulaire.email.includes('@')) {
-      this.erreurFormulaire = 'Adresse email invalide.';
+    if (!this.formulaire.email.includes('@')) {
+      this.erreurFormulaire = 'Email invalide.';
       return;
     }
     if (this.formulaire.motDePasse &&
@@ -120,42 +254,159 @@ export class ProfilComponent implements OnInit {
       this.erreurFormulaire = 'Les mots de passe ne correspondent pas.';
       return;
     }
-    if (this.objectifTemp <= 0 || this.objectifTemp > 80) {
-      this.erreurFormulaire = "L'objectif doit etre entre 1 et 80 heures.";
+    if (this.formulaire.motDePasse &&
+        this.formulaire.motDePasse.length < 6) {
+      this.erreurFormulaire = 'Le mot de passe doit contenir au moins 6 caractères.';
+      return;
+    }
+    if (this.formulaire.motDePasse && !this.formulaire.ancienMotDePasse) {
+      this.erreurFormulaire = 'Veuillez saisir l\'ancien mot de passe.';
       return;
     }
 
-    // Appliquer les changements
-    this.utilisateur.nom   = this.formulaire.nom.trim();
-    this.utilisateur.email = this.formulaire.email.trim();
-    this.objectifHebdo     = this.objectifTemp;
-    // Appliquer le nouvel avatar s'il a été choisi
-    if (this.apercuAvatar) {
-      this.utilisateur.avatar = this.apercuAvatar;
-      this.apercuAvatar = '';
-    }
+    this.userService.modifierProfil({
+      nom:   this.formulaire.nom.trim(),
+      email: this.formulaire.email.trim()
+    }).subscribe({
+      next: (res) => {
+        const u = res?.data ?? res;
+        this.utilisateur.nom   = u?.nom   || this.formulaire.nom;
+        this.utilisateur.email = u?.email || this.formulaire.email;
 
-    this.modeEdition      = false;
-    this.erreurFormulaire = '';
-    this.messageSucces    = 'Profil mis a jour avec succes !';
-    setTimeout(() => this.messageSucces = '', 3000);
+        if (this.formulaire.motDePasse) {
+          this.userService.changerMotDePasse({
+            ancienMotDePasse:  this.formulaire.ancienMotDePasse,
+            nouveauMotDePasse: this.formulaire.motDePasse
+          }).subscribe({
+            next:  () => this.sauvegarderDisponibilites(),
+            error: (err) => {
+              this.erreurFormulaire =
+                err.error?.message || 'Ancien mot de passe incorrect.';
+            }
+          });
+        } else {
+          this.sauvegarderDisponibilites();
+        }
+      },
+      error: (err) => {
+        this.erreurFormulaire =
+          err.error?.message || 'Erreur lors de la modification du profil.';
+      }
+    });
   }
 
-  /* ── Priorité ── */
-  libellePriorite(p: string): string {
-    return p === 'haute' ? 'Haute' : p === 'moyenne' ? 'Moyenne' : 'Basse';
+  private sauvegarderDisponibilites(): void {
+    const promesses: Promise<any>[] = [];
+
+    for (const dispo of this.disponibilites) {
+      if (dispo.actif && !dispo.id) {
+        promesses.push(
+          this.disponibiliteService.creer({
+            jour:       dispo.jour.toUpperCase(),
+            heureDebut: dispo.debut + ':00',
+            heureFin:   dispo.fin   + ':00'
+          }).toPromise()
+        );
+      } else if (!dispo.actif && dispo.id) {
+        promesses.push(
+          this.disponibiliteService.supprimer(dispo.id).toPromise()
+        );
+      }
+    }
+
+    Promise.all(promesses)
+      .then(() => {
+        this.finSauvegarde();
+      })
+      .catch((err) => {
+        console.error('Erreur sauvegarde disponibilités:', err);
+        this.erreurFormulaire = 'Erreur lors de la sauvegarde des disponibilités.';
+      });
+  }
+
+  private finSauvegarde(): void {
+    this.modeEdition      = false;
+    this.erreurFormulaire = '';
+    this.messageSucces    = 'Profil mis à jour avec succès !';
+    this.chargerDisponibilites();
+    this.chargerMatieres();
+    this.chargerHeuresRealisees();
+    setTimeout(() => this.messageSucces = '', 4000);
+    this.cdr.detectChanges();
+  }
+
+  /* ════════════════════
+     PRIORITÉS
+  ════════════════════ */
+
+  libellePriorite(p: number | string): string {
+    if (p === 1 || p === 'haute')   return 'Haute';
+    if (p === 2 || p === 'moyenne') return 'Moyenne';
+    return 'Basse';
+  }
+
+  classPriorite(p: number | string): string {
+    if (p === 1 || p === 'haute')   return 'prio-haute';
+    if (p === 2 || p === 'moyenne') return 'prio-moyenne';
+    return 'prio-basse';
   }
 
   changerPriorite(m: Matiere, p: 'haute' | 'moyenne' | 'basse'): void {
-    m.priorite = p;
+    const valeur = p === 'haute' ? 1 : p === 'moyenne' ? 2 : 3;
+    this.matiereService.modifier(m.id!, {
+      nom:                 m.nom,
+      priorite:            valeur,
+      objectifHebdoHeures: m.objectifHebdoHeures
+    }).subscribe({
+      next: () => {
+        m.priorite = valeur;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.erreurFormulaire =
+          err.error?.message || 'Erreur changement de priorité.';
+      }
+    });
   }
 
-  /* ── Upload avatar ── */
+  /* ════════════════════
+     DISPONIBILITÉS
+  ════════════════════ */
+
+  toggleDispo(d: Disponibilite): void {
+    if (d.actif && !d.debut) {
+      d.debut = '09:00';
+      d.fin   = '12:00';
+    }
+  }
+
+  /* ════════════════════
+     SUPPRIMER COMPTE
+  ════════════════════ */
+
+  supprimerCompte(): void {
+    if (!confirm('Êtes-vous sûr ? Cette action est irréversible.')) return;
+    this.userService.supprimerCompte().subscribe({
+      next: () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        this.router.navigate(['/login']);
+      },
+      error: (err) => {
+        this.erreurFormulaire =
+          err.error?.message || 'Erreur suppression du compte.';
+      }
+    });
+  }
+
+  /* ════════════════════
+     UPLOAD AVATAR
+  ════════════════════ */
+
   declencherUpload(): void {
-    // Créer un input file dynamique sans ViewChild
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
+    const input    = document.createElement('input');
+    input.type     = 'file';
+    input.accept   = 'image/*';
     input.onchange = (e: Event) => this.onFichierChoisi(e);
     input.click();
   }
@@ -163,62 +414,54 @@ export class ProfilComponent implements OnInit {
   onFichierChoisi(event: Event): void {
     const input   = event.target as HTMLInputElement;
     const fichier = input.files?.[0];
-    this.erreurUpload = '';
-    this.nomFichier   = '';
+    this.erreurUpload  = '';
+    this.nomFichier    = '';
     this.tailleFichier = '';
-
     if (!fichier) return;
 
-    // ── Vérification du type MIME ──
-    const typesAcceptes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const typesAcceptes = ['image/jpeg','image/png','image/gif','image/webp'];
     if (!typesAcceptes.includes(fichier.type)) {
-      this.erreurUpload = 'Format non supporté. Utilisez JPG, PNG, GIF ou WEBP.';
+      this.erreurUpload = 'Format non supporté. JPG, PNG, GIF ou WEBP.';
       return;
     }
-
-    // ── Vérification de la taille (2 Mo max) ──
-    const tailleMax = 2 * 1024 * 1024; // 2 Mo en octets
-    if (fichier.size > tailleMax) {
-      const tailleActuelle = (fichier.size / (1024 * 1024)).toFixed(1);
-      this.erreurUpload = `Fichier trop lourd (${tailleActuelle} Mo). Maximum : 2 Mo.`;
+    if (fichier.size > 2 * 1024 * 1024) {
+      this.erreurUpload = 'Fichier trop lourd. Maximum 2 Mo.';
       return;
     }
-
-    // ── Infos affichées ──
     this.nomFichier    = fichier.name;
     this.tailleFichier = fichier.size < 1024 * 1024
       ? `${(fichier.size / 1024).toFixed(0)} Ko`
       : `${(fichier.size / (1024 * 1024)).toFixed(1)} Mo`;
 
-    // ── Conversion en Base64 via FileReader ──
-    const reader = new FileReader();
-
-    reader.onload = (e: ProgressEvent<FileReader>) => {
-      const base64 = e.target?.result as string;
-      // base64 = "data:image/jpeg;base64,/9j/4AAQ..."
-      this.apercuAvatar = base64;
-      this.cdr.detectChanges(); // forcer la mise à jour Angular
+    const reader  = new FileReader();
+    reader.onload = (e) => {
+      this.apercuAvatar = e.target?.result as string;
+      this.cdr.detectChanges();
     };
-
-    reader.onerror = () => {
-      this.erreurUpload = 'Erreur lors de la lecture du fichier.';
-    };
-
-    // Lancer la lecture — FileReader convertit en data URL (base64)
     reader.readAsDataURL(fichier);
   }
 
   supprimerAvatar(): void {
-    this.apercuAvatar = '';
-    this.erreurUpload = '';
+    this.apercuAvatar  = '';
+    this.erreurUpload  = '';
+    this.nomFichier    = '';
+    this.tailleFichier = '';
   }
 
-  /* ── Disponibilité ── */
-  toggleDispo(d: Disponibilite): void {
-    d.actif = !d.actif;
-    if (d.actif && !d.debut) {
-      d.debut = '09:00';
-      d.fin   = '12:00';
+  /* ════════════════════
+     UTILITAIRES
+  ════════════════════ */
+
+  private formatDate(dateStr: string): string {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('fr-FR', {
+        day: 'numeric', month: 'long', year: 'numeric'
+      });
+    } catch {
+      return dateStr;
     }
   }
 }
