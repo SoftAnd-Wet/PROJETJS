@@ -1,0 +1,71 @@
+<div *ngIf="loading">Loading...</div>
+<div *ngIf="!loading">
+<div class="page">
+
+  <div class="stats-grid">
+    <app-stat-card *ngFor="let c of statCards" [data]="c" />
+  </div>
+
+  <div class="row row-2">
+
+    <!-- User growth bars -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">User growth</div>
+          <div class="card-sub">Last 4 weeks</div>
+        </div>
+      </div>
+      <div class="bar-chart">
+        <div class="bar-group" *ngFor="let w of weeklyGrowth">
+          <div class="bar-stack">
+            <div class="bar seg-violet"
+                 [style.height]="barH(w.users, maxGrowthUsers)"
+                 [title]="w.users + ' users'"></div>
+          </div>
+          <span class="bar-lbl">{{ w.label }}</span>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="leg"><span class="leg-sq violet"></span>Total users</span>
+      </div>
+    </div>
+
+    <!-- Retention -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">User retention</div>
+          <div class="card-sub">% still active after N days</div>
+        </div>
+      </div>
+      <div class="retention-grid">
+        <div class="ret-item" *ngFor="let d of retentionDays; let i = index">
+          <div class="ret-val">{{ retentionPct[i] }}%</div>
+          <mat-progress-bar mode="determinate" [value]="retentionPct[i]" class="ret-bar"></mat-progress-bar>
+          <div class="ret-lbl">Day {{ d }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Sessions by subject -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Sessions by subject</div>
+        <div class="card-sub">All-time breakdown</div>
+      </div>
+    </div>
+    <div class="subject-list">
+      <div class="subj-row" *ngFor="let s of subjects">
+        <span class="subj-name">{{ s.name }}</span>
+        <mat-progress-bar mode="determinate" [value]="s.pct" class="subj-bar" [style.--c]="s.color"></mat-progress-bar>
+        <span class="subj-pct">{{ s.pct }}%</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>

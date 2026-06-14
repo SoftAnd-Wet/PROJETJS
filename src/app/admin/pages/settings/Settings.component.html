@@ -1,0 +1,90 @@
+<div class="page">
+  <div class="row row-2">
+
+    <!-- General -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:20px">General settings</div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Platform name</div>
+          <div class="setting-desc">Shown in emails and notifications</div>
+        </div>
+        <input class="setting-input" [(ngModel)]="platformName"/>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Max members per session</div>
+          <div class="setting-desc">Hard cap per study group</div>
+        </div>
+        <input class="setting-input narrow" type="number" [(ngModel)]="maxMembers"/>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">New user approval</div>
+          <div class="setting-desc">Require manual approval for signups</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" [(ngModel)]="requireApproval"/>
+          <span class="track"></span>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Auto-close empty sessions</div>
+          <div class="setting-desc">Close sessions with 0 members after 10 min</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" [(ngModel)]="autoClose"/>
+          <span class="track"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:20px">Notifications &amp; alerts</div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Email on new report</div>
+          <div class="setting-desc">Send email to admins when a report is filed</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" [(ngModel)]="emailOnReport"/>
+          <span class="track"></span>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Daily activity digest</div>
+          <div class="setting-desc">Morning summary email with key metrics</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" [(ngModel)]="dailyDigest"/>
+          <span class="track"></span>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Alert on spike in reports</div>
+          <div class="setting-desc">Notify if reports exceed 10 in 1 hour</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" [(ngModel)]="alertOnSpike"/>
+          <span class="track"></span>
+        </label>
+      </div>
+
+      <button mat-flat-button class="save-btn" (click)="save()">
+        Save changes
+      </button>
+    </div>
+
+  </div>
+</div>

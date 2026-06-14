@@ -1,0 +1,116 @@
+<div class="page">
+
+  <div class="filter-bar">
+    <div class="search-field">
+      <mat-icon class="si">search</mat-icon>
+      <input type="text" placeholder="Search subject, host, topic…"
+             [value]="searchQuery()"
+             (input)="setSearch($any($event.target).value)"/>
+    </div>
+
+    <select class="sel"
+            [value]="statusFilter()"
+            (change)="setFilter($any($event.target).value)">
+      <option value="all">All statuses</option>
+      <option value="live">Live</option>
+      <option value="open">Open</option>
+      <option value="closed">Closed</option>
+    </select>
+
+    <span class="count">{{ filtered().length }} sessions</span>
+
+    <span class="live-badge" style="margin-left:auto">
+      <span class="live-dot"></span>{{ data.liveCount() }} live now
+    </span>
+  </div>
+
+  <div class="card-table">
+    <table mat-table [dataSource]="filtered()" class="table">
+
+      <!-- Subject -->
+      <ng-container matColumnDef="subject">
+        <th mat-header-cell *matHeaderCellDef>Subject</th>
+        <td mat-cell *matCellDef="let s">
+          <div class="subj-cell">
+            <span class="sdot" [style.background]="s.subjectColor"></span>
+            <span class="uname">{{ s.subject }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Host -->
+      <ng-container matColumnDef="host">
+        <th mat-header-cell *matHeaderCellDef>Host</th>
+        <td mat-cell *matCellDef="let s">
+          <a class="host-link" [routerLink]="['/admin/users', s.hostId]">{{ s.host }}</a>
+        </td>
+      </ng-container>
+
+      <!-- Topic -->
+      <ng-container matColumnDef="topic">
+        <th mat-header-cell *matHeaderCellDef>Topic</th>
+        <td mat-cell *matCellDef="let s" class="muted topic-cell">{{ s.topic }}</td>
+      </ng-container>
+
+      <!-- Members -->
+      <ng-container matColumnDef="members">
+        <th mat-header-cell *matHeaderCellDef>Members</th>
+        <td mat-cell *matCellDef="let s">
+          <span [class.full]="s.members === s.maxMembers">{{ s.members }}/{{ s.maxMembers }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Duration -->
+      <ng-container matColumnDef="duration">
+        <th mat-header-cell *matHeaderCellDef>Duration</th>
+        <td mat-cell *matCellDef="let s" class="muted mono">{{ s.duration }}</td>
+      </ng-container>
+
+      <!-- Created -->
+      <ng-container matColumnDef="created">
+        <th mat-header-cell *matHeaderCellDef>Created</th>
+        <td mat-cell *matCellDef="let s" class="muted">{{ s.createdAt }}</td>
+      </ng-container>
+
+      <!-- Status -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let s"><app-status-chip [status]="s.status" /></td>
+      </ng-container>
+
+      <!-- Actions -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let s">
+          <div class="action-row">
+            <button mat-stroked-button class="act-btn danger"
+                    (click)="delete(s.id, s.subject)"
+                    matTooltip="Delete session">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let r; columns: columns"></tr>
+    </table>
+
+    <div class="empty" *ngIf="filtered().length === 0">
+      <mat-icon>search_off</mat-icon>
+      <p>No sessions match your filters.</p>
+    </div>
+
+    <div class="pagination">
+      <span class="muted" style="font-size:12.5px">
+        Showing {{ filtered().length }} of {{ data.sessions().length }} sessions
+      </span>
+      <div class="page-btns">
+        <button mat-stroked-button class="pg-btn">‹</button>
+        <button mat-stroked-button class="pg-btn current">1</button>
+        <button mat-stroked-button class="pg-btn">›</button>
+      </div>
+    </div>
+  </div>
+
+</div>

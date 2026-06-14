@@ -1,0 +1,91 @@
+<!-- src/app/auth/auth-modal/auth-modal.component.html -->
+<div class="overlay" (click)="close.emit()">
+  <div class="modal" (click)="$event.stopPropagation()">
+
+    <button class="close-btn" (click)="close.emit()">&#x2715;</button>
+
+    <div class="modal-head">
+      <h2>Welcome</h2>
+      <p>Access your account or create a new one.</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button [class.active]="activeTab === 'login'" (click)="switchTab('login')">Sign in</button>
+      <button [class.active]="activeTab === 'register'" (click)="switchTab('register')">Register</button>
+    </div>
+
+    <!-- Error banner -->
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+    <!-- LOGIN FORM -->
+    <form *ngIf="activeTab === 'login'" [formGroup]="loginForm" (ngSubmit)="onLogin()">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" formControlName="email" placeholder="you@example.com"
+               [class.invalid]="lEmail.invalid && lEmail.touched" />
+        <span class="error" *ngIf="lEmail.touched && lEmail.hasError('required')">Email is required</span>
+        <span class="error" *ngIf="lEmail.touched && lEmail.hasError('email')">Enter a valid email</span>
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <input type="password" formControlName="password" placeholder="••••••••"
+               [class.invalid]="lPassword.invalid && lPassword.touched" />
+        <span class="error" *ngIf="lPassword.touched && lPassword.hasError('required')">Password is required</span>
+        <span class="error" *ngIf="lPassword.touched && lPassword.hasError('minlength')">At least 8 characters</span>
+      </div>
+
+      <button type="submit" class="submit-btn" [disabled]="loading">
+        {{ loading ? 'Signing in...' : 'Sign in' }}
+      </button>
+
+      <p class="switch-link">
+        No account? <a (click)="switchTab('register')">Register here</a>
+      </p>
+    </form>
+
+    <!-- REGISTER FORM -->
+    <form *ngIf="activeTab === 'register'" [formGroup]="registerForm" (ngSubmit)="onRegister()">
+      <div class="field">
+        <label>Full name</label>
+        <input type="text" formControlName="name" placeholder="Jane Smith"
+               [class.invalid]="rName.invalid && rName.touched" />
+        <span class="error" *ngIf="rName.touched && rName.hasError('required')">Name is required</span>
+        <span class="error" *ngIf="rName.touched && rName.hasError('minlength')">At least 2 characters</span>
+      </div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" formControlName="email" placeholder="you@example.com"
+               [class.invalid]="rEmail.invalid && rEmail.touched" />
+        <span class="error" *ngIf="rEmail.touched && rEmail.hasError('required')">Email is required</span>
+        <span class="error" *ngIf="rEmail.touched && rEmail.hasError('email')">Enter a valid email</span>
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <input type="password" formControlName="password" placeholder="••••••••"
+               [class.invalid]="rPassword.invalid && rPassword.touched" />
+        <span class="error" *ngIf="rPassword.touched && rPassword.hasError('required')">Password is required</span>
+        <span class="error" *ngIf="rPassword.touched && rPassword.hasError('minlength')">At least 8 characters</span>
+      </div>
+
+      <div class="field">
+        <label>Confirm password</label>
+        <input type="password" formControlName="confirmPassword" placeholder="••••••••"
+               [class.invalid]="rConfirm.touched && registerForm.hasError('mismatch')" />
+        <span class="error" *ngIf="rConfirm.touched && registerForm.hasError('mismatch')">Passwords do not match</span>
+      </div>
+
+      <button type="submit" class="submit-btn" [disabled]="loading">
+        {{ loading ? 'Creating account...' : 'Create account' }}
+      </button>
+
+      <p class="switch-link">
+        Already have an account? <a (click)="switchTab('login')">Sign in</a>
+      </p>
+    </form>
+
+  </div>
+</div>

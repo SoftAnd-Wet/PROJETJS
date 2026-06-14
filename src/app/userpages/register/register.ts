@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
+import { AuthService } from '../../features/auth/auth.service';
 
 @Component({
   selector: 'app-register',
@@ -43,20 +43,12 @@ export class RegisterComponent {
 
     this.chargement = true;
 
-    const payload = {
-      nom: this.form.nom,
-      email: this.form.email,
-      motDePasse: this.form.motDePasse
-    };
-
-    this.authService.register(payload).subscribe({
-      next: (res) => {
+    this.authService.register(this.form.nom, this.form.email, this.form.motDePasse).subscribe({
+      next: () => {
         this.chargement = false;
-        localStorage.setItem('token', res.data.accessToken);
-        localStorage.setItem('user', JSON.stringify(res.data));
         this.router.navigate(['/dashboard']);
       },
-      error: (err) => {
+      error: (err: any) => {
         this.chargement = false;
         this.erreur = err.error?.message || 'Erreur lors de l\'inscription';
       }

@@ -1,0 +1,203 @@
+// ── Heat scale colours (tweak to match your theme) ──────────────────────────
+:host {
+  --heat-0: #ede9fe;   // empty - very light purple
+  --heat-1: #c4b5fd;   // low
+  --heat-2: #a78bfa;   // medium-low
+  --heat-3: #7c3aed;   // medium-high
+  --heat-4: #5b21b6;   // peak - deep purple
+}
+
+// ── Layout helpers (copy from your existing global styles if already there) ──
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.card-title {
+  color: #1a1a2e;
+}
+
+.card-sub {
+  color: #888;
+}
+
+.day-lbl, .leg-label, .wow-day {
+  color: #999;
+}
+// ── Heatmap ──────────────────────────────────────────────────────────────────
+.heatmap-card { grid-column: 1 / 2; }
+
+.legend-inline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.leg-label {
+  font-size: 11px;
+  color: var(--text-muted, #888);
+}
+
+.heat-sq {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.heatmap-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.week-labels {
+  display: grid;
+  grid-template-columns: 36px repeat(4, 1fr);
+  gap: 6px;
+  padding-left: 2px;
+
+  span {
+    font-size: 11px;
+    color: var(--text-muted, #888);
+    text-align: center;
+  }
+}
+
+.heat-row {
+  display: grid;
+  grid-template-columns: 36px repeat(4, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.day-lbl {
+  font-size: 11px;
+  color: var(--text-muted, #888);
+  text-align: right;
+  padding-right: 6px;
+}
+
+.heat-cell {
+  height: 36px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+
+  &:hover {
+    transform: scale(1.08);
+    opacity: 0.85;
+  }
+}
+
+// ── Hourly chart ─────────────────────────────────────────────────────────────
+.hourly-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hour-labels {
+  display: flex;
+  justify-content: space-around;
+  padding-left: 36px;
+
+  span {
+    font-size: 10px;
+    color: var(--text-muted, #888);
+    text-align: center;
+    flex: 1;
+  }
+}
+
+.hourly-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.hourly-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  flex: 1;
+  height: 80px;
+}
+
+.h-bar {
+  flex: 1;
+  background: var(--heat-2);
+  border-radius: 3px 3px 0 0;
+  transition: background 0.2s;
+
+  &.peak {
+    background: var(--heat-4);
+  }
+
+  &:hover {
+    background: var(--heat-3);
+    opacity: 0.9;
+  }
+}
+
+// ── Week-over-week ────────────────────────────────────────────────────────────
+.wow-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.wow-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.wow-day {
+  font-size: 11px;
+  color: var(--text-muted, #888);
+}
+
+.wow-bars {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 80px;
+}
+
+.wow-bar {
+  width: 10px;
+  border-radius: 3px 3px 0 0;
+  transition: opacity 0.2s;
+
+  &:hover { opacity: 0.75; }
+}
+
+.wow-total {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary, #e0e0e0);
+}

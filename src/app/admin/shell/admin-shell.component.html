@@ -1,0 +1,91 @@
+<div class="layout" [class.collapsed]="collapsed">
+
+  <!-- ══ SIDEBAR ══ -->
+  <nav class="sidebar">
+
+    <div class="sidebar-logo">
+      <div class="logo-zone">
+        <div class="logo-icone">P</div>
+        <div class="logo-texte" *ngIf="!collapsed">
+          <h2>Planify</h2>
+          <span>Study Platform</span>
+        </div>
+      </div>
+      <span class="logo-badge" *ngIf="!collapsed">Admin</span>
+    </div>
+
+    <div class="nav-scroll">
+      <ng-container *ngFor="let group of navGroups">
+        <div class="nav-section-label" *ngIf="!collapsed">{{ group.label }}</div>
+
+        <a
+          *ngFor="let item of group.items"
+          class="nav-item"
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          [matTooltip]="collapsed ? item.label : ''"
+          matTooltipPosition="right">
+
+          <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+          <span class="nav-label" *ngIf="!collapsed">{{ item.label }}</span>
+
+          <ng-container *ngIf="item.badgeSignal">
+            <!-- expanded: text badge -->
+            <span
+              *ngIf="!collapsed && item.badgeSignal() > 0"
+              class="nav-badge"
+              [class]="'badge-' + item.badgeColor">
+              {{ formatBadge(item.badgeSignal()) }}
+            </span>
+            <!-- collapsed: dot -->
+            <span
+              *ngIf="collapsed && item.badgeSignal() > 0"
+              class="nav-dot"
+              [class]="'dot-' + item.badgeColor">
+            </span>
+          </ng-container>
+        </a>
+      </ng-container>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="admin-card" *ngIf="!collapsed">
+        <div class="avatar">{{ adminInitials }}</div>
+        <div class="admin-info">
+          <div class="admin-name">{{ adminName }}</div>
+          <div class="admin-role">{{ adminRole }}</div>
+        </div>
+        <mat-icon class="logout-icon">logout</mat-icon>
+      </div>
+      <div class="admin-card-mini" *ngIf="collapsed">
+        <div class="avatar">{{ adminInitials }}</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ══ MAIN ══ -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <button mat-icon-button (click)="collapsed = !collapsed" class="menu-btn">
+        <mat-icon>{{ collapsed ? 'menu_open' : 'menu' }}</mat-icon>
+      </button>
+
+      <div class="topbar-actions">
+        <button mat-icon-button [matBadge]="data.openReports()" matBadgeColor="warn" matBadgeSize="small">
+          <mat-icon>notifications</mat-icon>
+        </button>
+        <button mat-icon-button>
+          <mat-icon>account_circle</mat-icon>
+        </button>
+      </div>
+    </header>
+
+    <!-- Routed pages go here -->
+    <div class="router-area">
+      <router-outlet></router-outlet>
+    </div>
+
+  </div>
+</div>

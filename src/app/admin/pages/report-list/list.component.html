@@ -1,0 +1,90 @@
+<div class="page">
+
+  <!-- Summary row -->
+  <div class="summary-row">
+    <div class="summary-item flagged">
+      <mat-icon>flag</mat-icon>
+      <span>{{ flaggedCount() }} need action</span>
+    </div>
+    <div class="summary-item reviewing">
+      <mat-icon>manage_search</mat-icon>
+      <span>{{ reviewingCount() }} under review</span>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <select class="sel"
+            [value]="statusFilter()"
+            (change)="setFilter($any($event.target).value)">
+      <option value="all">All reports ({{ data.reports().length }})</option>
+      <option value="flagged">Flagged</option>
+      <option value="reviewing">Under review</option>
+      <option value="resolved">Resolved</option>
+    </select>
+
+    <input class="search-input"
+           placeholder="Search by ID, user or content..."
+           [value]="searchQuery()"
+           (input)="setSearch($any($event.target).value)" />
+
+    <span class="count">{{ filtered().length }} shown</span>
+  </div>
+
+  <!-- Report cards -->
+  <div class="reports-list">
+    <div class="report-card" *ngFor="let r of filtered()">
+      <div class="report-head">
+        <div class="type-icon" [class]="r.type">
+          <mat-icon>{{
+            r.type === 'session_title' ? 'menu_book' :
+            r.type === 'chat_message'  ? 'chat' :
+            r.type === 'group_title'   ? 'group' : 'person'
+          }}</mat-icon>
+        </div>
+        <div class="report-meta-block">
+          <div class="report-title">
+            {{ r.type === 'group_title' ? 'Inappropriate group title'
+             : r.type === 'session_title' ? 'Inappropriate session title'
+             : r.type === 'chat_message' ? 'Offensive chat message'
+             : 'Inappropriate username' }}
+            <span class="report-id">#{{ r.id }}</span>
+          </div>
+          <div class="report-meta">
+            Target: <strong>{{ r.reportedTarget }}</strong> ·
+            {{ r.date }} ·
+            <span class="offense-count">{{ r.offenseCount }} offense(s)</span>
+          </div>
+        </div>
+        <app-status-chip [status]="r.status" />
+      </div>
+
+      <strong>Inappropriate content detected:</strong> "{{ r.contentSnapshot }}" · keyword: <strong>{{ r.matchedKeyword }}</strong>
+
+      <div class="report-actions">
+        <button mat-stroked-button class="act-btn"
+                (click)="update(r.id, 'reviewing')"
+                [disabled]="r.status === 'reviewing' || r.status === 'resolved'">
+          <mat-icon>manage_search</mat-icon> Review
+        </button>
+        <button mat-stroked-button class="act-btn"
+                (click)="update(r.id, 'resolved')"
+                [disabled]="r.status === 'resolved'">
+          <mat-icon>check_circle_outline</mat-icon> Resolve
+        </button>
+        <button mat-stroked-button class="act-btn danger"
+                (click)="ban(r.reportedUserId, r.id)"
+                [disabled]="r.status === 'resolved'"
+                matTooltip="Suspend user and resolve report">
+          <mat-icon>block</mat-icon> Ban
+        </button>
+      </div>
+    </div>
+
+    <div class="empty" *ngIf="filtered().length === 0">
+      <mat-icon>check_circle</mat-icon>
+      <p>No reports in this category.</p>
+    </div>
+  </div>
+
+</div>

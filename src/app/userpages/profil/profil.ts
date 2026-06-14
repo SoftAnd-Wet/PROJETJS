@@ -8,6 +8,8 @@ import { DisponibiliteService } from '../../services/disponibilite.service';
 import { MatiereService } from '../../services/matiere.service';
 import { DashboardService } from '../../services/dashboard.service';
 import { Router } from '@angular/router';
+import { AuthService } from '../../features/auth/auth.service';
+import { filter, take } from 'rxjs';
 
 export interface Disponibilite {
   id?:   number;
@@ -97,19 +99,26 @@ export class ProfilComponent implements OnInit {
     private matiereService:       MatiereService,
     private dashboardService:     DashboardService,
     private router:               Router,
-    private cdr:                  ChangeDetectorRef
+    private cdr:                  ChangeDetectorRef,
+    private authService:          AuthService
   ) {}
 
   ngOnInit(): void {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      this.router.navigate(['/login']);
-      return;
-    }
-    this.chargerProfil();
-    this.chargerDisponibilites();
-    this.chargerMatieres();
-    this.chargerHeuresRealisees();
+    this.authService.currentUser$
+      .pipe(
+        filter(user => user !== undefined),
+        take(1)
+      )
+      .subscribe(user => {
+        if (!user) {
+          this.router.navigate(['/']);
+          return;
+        }
+        this.chargerProfil();
+        this.chargerDisponibilites();
+        this.chargerMatieres();
+        this.chargerHeuresRealisees();
+      });
   }
 
   /* ════════════════════
@@ -140,9 +149,7 @@ export class ProfilComponent implements OnInit {
         this.chargement = false;
         this.cdr.detectChanges();
         if (err.status === 401 || err.status === 403) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          this.router.navigate(['/login']);
+          this.router.navigate(['/']);
         }
       }
     });
@@ -388,9 +395,10 @@ export class ProfilComponent implements OnInit {
     if (!confirm('Êtes-vous sûr ? Cette action est irréversible.')) return;
     this.userService.supprimerCompte().subscribe({
       next: () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        this.router.navigate(['/login']);
+        this.authService.logout().subscribe({
+          next: () => this.router.navigate(['/']),
+          error: () => this.router.navigate(['/'])
+        });
       },
       error: (err) => {
         this.erreurFormulaire =

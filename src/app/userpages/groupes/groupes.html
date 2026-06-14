@@ -304,10 +304,19 @@
               </div>
               <div #chatFin></div>
             </div>
+            <div class="erreur-bloc erreur-flash chat-erreur" *ngIf="erreurMessage">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              {{ erreurMessage }}
+            </div>
             <div class="chat-saisie">
               <input class="chat-input" type="text"
                      placeholder="Écrire un message..."
                      [(ngModel)]="nouveauMessage"
+                     (input)="erreurMessage = ''"
                      (keyup.enter)="envoyerMessage()"
                      [disabled]="envoyageMessage"/>
               <button class="btn-envoyer" (click)="envoyerMessage()"
@@ -597,6 +606,14 @@
         <button class="modal-fermer" (click)="modalCreerOuvert=false">✕</button>
       </div>
       <div class="modal-corps">
+        <div class="erreur-bloc erreur-flash" *ngIf="erreurGroupe">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          {{ erreurGroupe }}
+        </div>
         <div class="champ-groupe">
           <label class="champ-label">Nom du groupe</label>
           <input class="champ-input" type="text" [(ngModel)]="nouveauGroupe.nom" placeholder="ex: Algo Team"/>
@@ -669,12 +686,41 @@
                    (keyup.enter)="envoyerInvitation()"/>
             <span class="erreur-msg" *ngIf="erreurInvitation">{{ erreurInvitation }}</span>
           </div>
+
+          <div class="separateur-ou"><span>ou rechercher un utilisateur</span></div>
+          <div class="champ-groupe" style="position:relative">
+            <label class="champ-label">Rechercher par nom ou email</label>
+            <input class="champ-input" type="text"
+                   [(ngModel)]="rechercheMembre"
+                   (input)="rechercherMembres()"
+                   placeholder="Tapez un nom ou email..."
+                   autocomplete="off"/>
+            <div class="dropdown-membres" *ngIf="resultatsRecherche.length > 0">
+              <div class="dropdown-item"
+                   *ngFor="let u of resultatsRecherche"
+                   (click)="selectionnerMembre(u)">
+                <div class="dm-avatar" [style.background]="'#7c6ef5'">{{ u.initials }}</div>
+                <div class="dm-info">
+                  <span class="dm-nom">{{ u.name }}</span>
+                  <span class="dm-email">{{ u.email }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="membre-selectionne" *ngIf="membreSelectionne">
+              <div class="dm-avatar" [style.background]="'#7c6ef5'">{{ membreSelectionne.initials }}</div>
+              <span>{{ membreSelectionne.name }}</span>
+              <button class="btn-retirer" (click)="membreSelectionne=null; rechercheMembre=''">✕</button>
+            </div>
+            <span class="erreur-msg" *ngIf="erreurInvitation">{{ erreurInvitation }}</span>
+          </div>
         </div>
       </div>
       <div class="modal-actions" *ngIf="!invitationEnvoyee">
         <button class="btn-annuler" (click)="modalInviterOuvert=false">Annuler</button>
         <button class="btn-confirmer" (click)="envoyerInvitation()"
-                [disabled]="!emailInvitation.trim()">Envoyer l'invitation</button>
+                [disabled]="!membreSelectionne && !emailInvitation.trim()">
+          Envoyer l'invitation
+        </button>
       </div>
     </div>
   </div>
@@ -687,7 +733,7 @@
         <button class="modal-fermer" (click)="modalSessionOuvert=false">✕</button>
       </div>
       <div class="modal-corps">
-        <div class="erreur-bloc" *ngIf="erreurSession">
+        <div class="erreur-bloc erreur-flash" *ngIf="erreurSession">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
             <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -729,3 +775,4 @@
   </div>
 
 </div>
+

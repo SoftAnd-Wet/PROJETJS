@@ -1,0 +1,98 @@
+<div class="page">
+
+  <!-- Stat cards -->
+  <div class="stats-grid">
+    <app-stat-card *ngFor="let c of statCards" [data]="c" />
+  </div>
+
+  <div class="row row-2">
+
+    <!-- GitHub-style heatmap -->
+    <div class="card heatmap-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Session activity</div>
+          <div class="card-sub">Daily study sessions — last 4 weeks</div>
+        </div>
+        <div class="legend-inline">
+          <span class="leg-label">Less</span>
+          <span class="heat-sq" *ngFor="let l of [0,1,2,3,4]" [style.background]="cellColor(l)"></span>
+          <span class="leg-label">More</span>
+        </div>
+      </div>
+
+      <div class="heatmap-grid">
+        <!-- Week labels -->
+        <div class="week-labels">
+          <span></span>
+          <span *ngFor="let w of weeks">{{ w }}</span>
+        </div>
+        <!-- Rows -->
+        <div class="heat-row" *ngFor="let row of heatRows">
+          <span class="day-lbl">{{ row.day }}</span>
+          <div
+            class="heat-cell"
+            *ngFor="let cell of row.cells"
+            [style.background]="cellColor(cell.level)"
+            [title]="cell.count + ' sessions · ' + cell.date">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hourly distribution heatmap -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Peak study hours</div>
+          <div class="card-sub">Sessions by hour and day</div>
+        </div>
+      </div>
+
+      <div class="hourly-chart">
+        <div class="hour-labels">
+          <span *ngFor="let h of hours">{{ h }}</span>
+        </div>
+        <div class="hourly-row" *ngFor="let row of hourlyRows">
+          <span class="day-lbl">{{ row.day }}</span>
+          <div class="hourly-bars">
+            <div
+              class="h-bar"
+              *ngFor="let v of row.values"
+              [style.height]="hourlyHeight(v)"
+              [title]="v + ' sessions'"
+              [class.peak]="v >= 80">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Weekly comparison -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Week-over-week breakdown</div>
+        <div class="card-sub">Sessions per day across all weeks</div>
+      </div>
+    </div>
+    <div class="wow-grid">
+      <div class="wow-col" *ngFor="let row of heatRows">
+        <div class="wow-day">{{ row.day }}</div>
+        <div class="wow-bars">
+          <div
+            class="wow-bar"
+            *ngFor="let cell of row.cells; let i = index"
+            [style.height]="hourlyHeight(cell.count)"
+            [style.background]="cellColor(cell.level)"
+            [title]="cell.date + ': ' + cell.count + ' sessions'">
+          </div>
+        </div>
+        <div class="wow-total">{{ row.cells[3].count }}</div>
+      </div>
+    </div>
+  </div>
+
+</div>

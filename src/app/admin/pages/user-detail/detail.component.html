@@ -1,0 +1,153 @@
+<div class="page" *ngIf="user() as u; else notFound">
+
+  <!-- Back + Actions header -->
+  <div class="page-header">
+    <button mat-stroked-button class="back-btn" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon> All users
+    </button>
+    <div class="header-actions">
+      <button mat-stroked-button class="act-btn"
+              [class.danger]="u.status !== 'suspended'"
+              (click)="suspend()"
+              [matTooltip]="u.status === 'suspended' ? 'Reactivate account' : 'Suspend account'">
+        <mat-icon>{{ u.status === 'suspended' ? 'check_circle' : 'block' }}</mat-icon>
+        {{ u.status === 'suspended' ? 'Reactivate' : 'Suspend' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Top row: Profile + Stats ── -->
+  <div class="top-row">
+
+    <!-- Profile card -->
+    <div class="card profile-card">
+      <div class="profile-head">
+        <div class="big-avatar" [style.background]="u.avatarColor">{{ u.initials }}</div>
+        <div class="profile-info">
+          <h2 class="profile-name">{{ u.name }}</h2>
+          <div class="profile-email muted">{{ u.email }}</div>
+          <div class="profile-meta muted">
+            <mat-icon class="meta-icon">calendar_today</mat-icon> Joined {{ u.joinDate }}
+          </div>
+        </div>
+        <app-status-chip [status]="u.status" />
+      </div>
+
+      <mat-divider class="divider"></mat-divider>
+
+      <p class="bio">{{ u.bio }}</p>
+
+      <div class="subjects-wrap">
+        <div class="tag" *ngFor="let s of u.topSubjects">{{ s }}</div>
+      </div>
+    </div>
+
+    <!-- Quick stats -->
+    <div class="stats-col">
+      <div class="mini-stat">
+        <div class="ms-icon icon-violet"><mat-icon>menu_book</mat-icon></div>
+        <div>
+          <div class="ms-val">{{ u.sessions }}</div>
+          <div class="ms-lbl">Total sessions</div>
+        </div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-icon icon-blue"><mat-icon>schedule</mat-icon></div>
+        <div>
+          <div class="ms-val">{{ u.studyHours }}h</div>
+          <div class="ms-lbl">Study hours</div>
+        </div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-icon icon-orange"><mat-icon>local_fire_department</mat-icon></div>
+        <div>
+          <div class="ms-val">{{ u.streak }}d</div>
+          <div class="ms-lbl">Current streak</div>
+        </div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-icon icon-green"><mat-icon>emoji_events</mat-icon></div>
+        <div>
+          <div class="ms-val">{{ u.bestStreak }}d</div>
+          <div class="ms-lbl">Best streak</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weekly activity chart -->
+    <div class="card chart-card">
+      <div class="card-title" style="margin-bottom:16px">Study hours this week</div>
+      <div class="weekly-chart">
+        <div class="wbar-group" *ngFor="let h of u.weeklyHours; let i = index">
+          <div class="wbar" [style.height]="barH(h)" [title]="h + 'h'"></div>
+          <span class="wbar-lbl">{{ weekDays[i] }}</span>
+        </div>
+      </div>
+      <div class="weekly-total muted">
+        Total: <strong>{{ u.weeklyHours.reduce((a,b) => a+b, 0) | number:'1.1-1' }}h</strong> this week
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Recent sessions table ── -->
+  <div class="card" style="margin-top:20px">
+    <div class="card-header">
+      <div class="card-title">Recent sessions</div>
+      <span class="muted" style="font-size:12.5px">{{ u.recentSessions.length }} sessions shown</span>
+    </div>
+
+    <div class="empty" *ngIf="u.recentSessions.length === 0">
+      <mat-icon>event_busy</mat-icon>
+      <p>No sessions yet.</p>
+    </div>
+
+    <table mat-table [dataSource]="u.recentSessions" class="sess-table" *ngIf="u.recentSessions.length > 0">
+
+      <ng-container matColumnDef="subject">
+        <th mat-header-cell *matHeaderCellDef>Subject</th>
+        <td mat-cell *matCellDef="let s">
+          <div class="subj-cell">
+            <span class="sdot" [style.background]="s.subjectColor"></span>
+            {{ s.subject }}
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef>Date</th>
+        <td mat-cell *matCellDef="let s" class="muted">{{ s.date }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="duration">
+        <th mat-header-cell *matHeaderCellDef>Duration</th>
+        <td mat-cell *matCellDef="let s" class="muted mono">{{ s.duration }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="members">
+        <th mat-header-cell *matHeaderCellDef>Members</th>
+        <td mat-cell *matCellDef="let s">{{ s.members }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="role">
+        <th mat-header-cell *matHeaderCellDef>Role</th>
+        <td mat-cell *matCellDef="let s">
+          <span class="role-chip" [class]="s.role">{{ s.role }}</span>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="sessionColumns"></tr>
+      <tr mat-row *matRowDef="let r; columns: sessionColumns"></tr>
+    </table>
+  </div>
+
+</div>
+
+<!-- Not found fallback -->
+<ng-template #notFound>
+  <div class="not-found">
+    <mat-icon>person_off</mat-icon>
+    <p>User not found.</p>
+    <button mat-stroked-button (click)="goBack()">← Back to users</button>
+  </div>
+</ng-template>

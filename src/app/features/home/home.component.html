@@ -1,0 +1,66 @@
+<div class="page">
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="brand-badge">P</div>
+      <div>
+        <h1 class="brand">Planify</h1>
+        <p class="brand-subtitle">Espace de planification d'etudes</p>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <ng-container *ngIf="!authService.isLoggedIn; else loggedInNav">
+        <button class="btn-ghost" (click)="openLogin()">Se connecter</button>
+        <button class="btn-primary" (click)="openRegister()">Creer un compte</button>
+      </ng-container>
+
+      <ng-template #loggedInNav>
+        <a routerLink="/dashboard" class="btn-primary">Aller au tableau de bord</a>
+        <button class="btn-ghost" (click)="logout()">Se deconnecter</button>
+      </ng-template>
+    </div>
+  </header>
+
+  <main class="home-content">
+    <section class="hero-card">
+      <span class="hero-kicker">Bon retour</span>
+      <h2>Planifiez mieux, etudiez mieux.</h2>
+      <p>
+        Construisez votre planning hebdomadaire, suivez vos sessions et collaborez avec vos groupes.
+        La connexion et l'inscription s'ouvrent ici sous forme de popups rapides.
+      </p>
+
+      <div class="hero-actions" *ngIf="!authService.isLoggedIn">
+        <button class="btn-primary large" (click)="openRegister()">Commencer gratuitement</button>
+        <button class="btn-ghost large" (click)="openLogin()">J'ai deja un compte</button>
+      </div>
+
+      <div class="hero-actions" *ngIf="authService.isLoggedIn">
+        <a routerLink="/dashboard" class="btn-primary large">Ouvrir mon tableau de bord</a>
+      </div>
+    </section>
+
+    <section class="features-grid" aria-label="Points forts de la plateforme">
+      <article class="feature-card">
+        <h3>Planification</h3>
+        <p>Generez des sessions selon vos disponibilites et vos priorites.</p>
+      </article>
+      <article class="feature-card">
+        <h3>Collaboration</h3>
+        <p>Partagez des sessions et travaillez en groupe avec un suivi en direct.</p>
+      </article>
+      <article class="feature-card">
+        <h3>Statistiques</h3>
+        <p>Suivez votre productivite avec des indicateurs hebdomadaires et mensuels clairs.</p>
+      </article>
+    </section>
+  </main>
+
+</div>
+
+<!-- Modal -->
+<app-auth-modal
+  *ngIf="showModal"
+  [initialTab]="modalTab"
+  (close)="closeModal()">
+</app-auth-modal>

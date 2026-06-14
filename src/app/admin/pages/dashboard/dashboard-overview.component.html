@@ -1,0 +1,130 @@
+<div class="page">
+
+  <!-- Stat cards -->
+  <div class="stats-grid">
+    <app-stat-card *ngFor="let c of statCards" [data]="c" />
+  </div>
+
+  <!-- Middle row -->
+  <div class="row row-3">
+
+    <!-- Activity chart -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Platform activity</div>
+          <div class="card-sub">Sessions &amp; signups — last 7 days</div>
+        </div>
+        <select class="select-sm">
+          <option>7 days</option><option>30 days</option><option>90 days</option>
+        </select>
+      </div>
+
+      <div class="bar-chart">
+        <div class="bar-group" *ngFor="let d of barDays">
+          <div class="bar-stack">
+            <div class="bar seg-sessions" [style.height]="barH(d.sessions)" [title]="d.sessions + ' sessions'"></div>
+            <div class="bar seg-signups"  [style.height]="barH(d.signups)"  [title]="d.signups  + ' signups'"></div>
+          </div>
+          <span class="bar-lbl">{{ d.day }}</span>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span class="leg"><span class="leg-sq sessions"></span>Sessions</span>
+        <span class="leg"><span class="leg-sq signups"></span>Signups</span>
+      </div>
+    </div>
+
+    <!-- Health panel -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Platform health</div>
+      </div>
+
+      <div class="health-grid">
+        <div class="metric" *ngFor="let m of healthMetrics">
+          <div class="metric-val" [style.color]="m.color">{{ m.value }}</div>
+          <div class="metric-lbl">{{ m.label }}</div>
+        </div>
+      </div>
+
+      <mat-divider class="divider"></mat-divider>
+
+      <div class="card-title" style="font-size:13.5px;margin-bottom:14px">Top subjects</div>
+      <div class="subject-list">
+        <div class="subj-row" *ngFor="let s of subjects">
+          <span class="subj-name">{{ s.name }}</span>
+          <mat-progress-bar mode="determinate" [value]="s.pct" class="subj-bar" [style.--c]="s.color"></mat-progress-bar>
+          <span class="subj-pct">{{ s.pct }}%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom row -->
+  <div class="row row-2">
+
+    <!-- Recent signups -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Recent signups</div>
+        <a routerLink="/admin/users" mat-stroked-button class="btn-sm">View all →</a>
+      </div>
+      <table mat-table [dataSource]="recentUsers" class="mini-table">
+        <ng-container matColumnDef="user">
+          <th mat-header-cell *matHeaderCellDef>User</th>
+          <td mat-cell *matCellDef="let u">
+            <div class="user-cell">
+              <div class="ava" [style.background]="u.avatarColor">{{ u.initials }}</div>
+              {{ u.name }}
+            </div>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="joined">
+          <th mat-header-cell *matHeaderCellDef>Joined</th>
+          <td mat-cell *matCellDef="let u" class="muted">{{ u.joinDate }}</td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let u"><app-status-chip [status]="u.status" /></td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="['user','joined','status']"></tr>
+        <tr mat-row        *matRowDef="let r; columns:['user','joined','status']"></tr>
+      </table>
+    </div>
+
+    <!-- Live sessions -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Live sessions</div>
+        <span class="live-badge"><span class="live-dot"></span>{{ data.liveCount() }} live</span>
+      </div>
+      <table mat-table [dataSource]="liveSessions" class="mini-table">
+        <ng-container matColumnDef="subject">
+          <th mat-header-cell *matHeaderCellDef>Subject</th>
+          <td mat-cell *matCellDef="let s">
+            <div class="subj-cell">
+              <span class="dot" [style.background]="s.subjectColor"></span>{{ s.subject }}
+            </div>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="host">
+          <th mat-header-cell *matHeaderCellDef>Host</th>
+          <td mat-cell *matCellDef="let s" class="muted">{{ s.host }}</td>
+        </ng-container>
+        <ng-container matColumnDef="members">
+          <th mat-header-cell *matHeaderCellDef>Members</th>
+          <td mat-cell *matCellDef="let s">{{ s.members }}/{{ s.maxMembers }}</td>
+        </ng-container>
+        <ng-container matColumnDef="duration">
+          <th mat-header-cell *matHeaderCellDef>Duration</th>
+          <td mat-cell *matCellDef="let s" class="muted">{{ s.duration }}</td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="['subject','host','members','duration']"></tr>
+        <tr mat-row        *matRowDef="let r; columns:['subject','host','members','duration']"></tr>
+      </table>
+    </div>
+
+  </div>
+</div>

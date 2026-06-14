@@ -11,6 +11,8 @@ import { catchError } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { NotificationService } from '../../services/notification.service';
+import { ContentFilterService } from '../../features/admin/content-filter.service';
+
 
 export interface Membre {
   id:    number;
@@ -111,6 +113,11 @@ export class GroupesComponent implements OnInit, OnDestroy, AfterViewChecked {
   invitationEnvoyee  = false;
   invitationEnCours  = false;
 
+  rechercheMembre    = '';
+  resultatsRecherche: any[] = [];
+  membreSelectionne:  any   = null;
+  private rechercheTimeout: any;
+
   nouvelleSession = { matiere:'', heure:'', fin:'', jour:'Lundi' };
   erreurSession   = '';
   sessionEnCours  = false;
@@ -128,6 +135,8 @@ export class GroupesComponent implements OnInit, OnDestroy, AfterViewChecked {
   creationEnCours       = false;
   erreur                = '';
   erreurInvitations     = '';
+  erreurGroupe          = '';
+  erreurMessage         = '';
 
   monUserId  = 0;
   monUserNom = '';
@@ -141,7 +150,8 @@ export class GroupesComponent implements OnInit, OnDestroy, AfterViewChecked {
     private messageService:          MessageService,
     private cdr:                     ChangeDetectorRef,
     public notifService: NotificationService,
-    private http:                    HttpClient
+    private http:                    HttpClient,
+    private contentFilter: ContentFilterService,
   ) {}
 
   ngOnInit(): void {
@@ -296,6 +306,19 @@ export class GroupesComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   creerGroupe(): void {
     if (!this.nouveauGroupe.nom.trim() || this.creationEnCours) return;
+    const check = this.contentFilter.check(this.nouveauGroupe.nom);
+    if (check.blocked) {
+      // get user from localStorage — same pattern already in your ngOnInit
+      this.contentFilter.report({
+        type:            'group_title',
+        contentSnapshot: this.nouveauGroupe.nom,
+        matchedKeyword:  check.matchedWord!,
+        reportedUserId:  this.monUserId,
+        reportedTarget:  this.monUserNom,
+      });
+      this.erreurGroupe = 'Ce nom contient un mot inapproprié.';
+      return;
+    }
     this.creationEnCours = true;
 
     this.groupeService.creer({
@@ -421,6 +444,9 @@ export class GroupesComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.erreurInvitation   = '';
     this.invitationEnvoyee  = false;
     this.invitationEnCours  = false;
+    this.rechercheMembre    = '';
+    this.resultatsRecherche = [];
+    this.membreSelectionne  = null;
   }
 
   envoyerInvitation(): void {
@@ -458,6 +484,32 @@ export class GroupesComponent implements OnInit, OnDestroy, AfterViewChecked {
           err?.error?.message || "Impossible d'envoyer l'invitation.";
       }
     });
+  }
+
+  rechercherMembres(): void {
+    clearTimeout(this.rechercheTimeout);
+    if (this.rechercheMembre.trim().length < 2) {
+      this.resultatsRecherche = [];
+      return;
+    }
+    this.rechercheTimeout = setTimeout(() => {
+      this.http.get<any[]>(
+        `${environment.apiUrl}/admin/utilisateurs/recherche?q=${encodeURIComponent(this.rechercheMembre)}`,
+      ).subscribe({
+        next: (res) => {
+          this.resultatsRecherche = (res as any)?.data ?? res ?? [];
+          this.cdr.detectChanges();
+        },
+        error: () => { this.resultatsRecherche = []; }
+      });
+    }, 300);
+  }
+
+  selectionnerMembre(u: any): void {
+    this.membreSelectionne  = u;
+    this.rechercheMembre    = '';
+    this.resultatsRecherche = [];
+    this.emailInvitation    = u.email;
   }
 
   copierCode(code: string): void {
@@ -501,9 +553,22 @@ export class GroupesComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
     if (!this.groupeSelectionne) return;
 
+    const nomSaisi = this.nouvelleSession.matiere.trim();
+    const check = this.contentFilter.check(nomSaisi);
+    if (check.blocked) {
+      this.contentFilter.report({
+        type:            'session_title',
+        contentSnapshot: nomSaisi,
+        matchedKeyword:  check.matchedWord!,
+        reportedUserId:  this.monUserId,
+        reportedTarget:  this.monUserNom,
+      });
+      this.erreurSession = 'Ce nom contient un mot inapproprié.';
+      return;
+    }
+
     this.sessionEnCours = true;
 
-    const nomSaisi = this.nouvelleSession.matiere.trim();
     const groupeId = this.groupeSelectionne.id;
 
     // ✅ FIX DATE : calculer le PROCHAIN jour correspondant au choix
@@ -752,7 +817,22 @@ export class GroupesComponent implements OnInit, OnDestroy, AfterViewChecked {
         !this.groupeSelectionne ||
         this.envoyageMessage) return;
 
+    this.erreurMessage = '';
     const contenu  = this.nouveauMessage.trim();
+
+    const check = this.contentFilter.check(contenu);
+    if (check.blocked) {
+      this.contentFilter.report({
+        type:            'chat_message',
+        contentSnapshot: contenu,
+        matchedKeyword:  check.matchedWord!,
+        reportedUserId:  this.monUserId,
+        reportedTarget:  this.monUserNom,
+      });
+      this.erreurMessage = 'This message contains inappropriate content.';
+      this.nouveauMessage = '';
+      return;
+    }
     const groupeId = this.groupeSelectionne.id;
     this.envoyageMessage = true;
     this.nouveauMessage  = '';
@@ -765,11 +845,13 @@ export class GroupesComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.defilementNecessaire = true;
         }
         this.envoyageMessage = false;
+        this.erreurMessage = '';
         this.cdr.detectChanges();
       },
       error: (err) => {
         this.envoyageMessage = false;
         this.nouveauMessage  = contenu;
+        this.erreurMessage = err?.error?.message || 'Failed to send message.';
         alert(err?.error?.message || 'Erreur envoi message.');
       }
     });

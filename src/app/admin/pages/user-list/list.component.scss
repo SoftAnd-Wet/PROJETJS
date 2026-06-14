@@ -1,0 +1,221 @@
+:host {
+  --bg:        #ffffff;
+  --bg2:       #ffffff;
+  --bg3:       #f7f9fc;
+  --bg4:       #eff4fb;
+  --border:    #e6ebf2;
+  --border2:   #d7e0ec;
+  --text:      #1f2937;
+  --muted:     #64748b;
+  --accent:    #7c6ef5;
+  --accent2:   #9d91f8;
+  --red:       #f56b6b;
+  --orange:    #f5944e;
+  --radius:    10px;
+  --radius-lg: 14px;
+  display: block;
+}
+
+.page { padding: 26px; }
+
+// ── Filter bar ────────────────────────────────────────────────────────────────
+
+.filter-bar {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 18px; flex-wrap: wrap;
+}
+
+.search-field {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 12px; flex: 1; max-width: 320px;
+  input {
+    background: none; border: none; outline: none;
+    color: var(--text); font-size: 13px;
+    font-family: 'DM Sans', sans-serif; width: 100%;
+    &::placeholder { color: var(--muted); }
+  }
+}
+
+.si { font-size: 16px !important; width: 16px !important; height: 16px !important; color: var(--muted); flex-shrink: 0; }
+
+.sel {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 12px;
+  color: var(--muted); font-size: 13px;
+  font-family: 'DM Sans', sans-serif; outline: none; cursor: pointer;
+  &:focus { border-color: var(--accent); }
+  option { background: var(--bg2); color: var(--text); }
+}
+
+.count { font-size: 12.5px; color: var(--muted); }
+
+// ── Table card ────────────────────────────────────────────────────────────────
+
+.card-table {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+}
+
+.table {
+  width: 100%; background: transparent !important;
+  ::ng-deep {
+    .mat-mdc-header-row { background: var(--bg3) !important; }
+    .mat-mdc-header-cell {
+      background: transparent !important; color: var(--muted) !important;
+      font-size: 11px !important; font-weight: 600 !important;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border) !important; padding: 0 14px !important;
+    }
+    .mat-mdc-row { background: transparent !important; transition: background .1s; &:hover { background: var(--bg3) !important; } }
+    .mat-mdc-cell { color: var(--text) !important; border-bottom: 1px solid var(--border) !important; font-size: 13.5px !important; padding: 10px 14px !important; }
+    .mat-mdc-row:last-child .mat-mdc-cell { border-bottom: none !important; }
+  }
+}
+
+.user-cell { display: flex; align-items: center; gap: 10px; }
+
+.ava {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600; color: #fff; flex-shrink: 0;
+}
+
+.uname { font-size: 13.5px; font-weight: 500; }
+.muted { color: var(--muted) !important; }
+.mono  { font-family: 'DM Mono', monospace; font-size: 12.5px !important; }
+.streak { font-size: 12.5px; color: var(--orange); }
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+
+.action-row { display: flex; gap: 4px; }
+
+
+.act-btn {
+  min-width: 0 !important;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  border-color: #cfe0f9 !important;
+  background: #f5f9ff !important;
+  color: #2563eb !important;
+  text-decoration: none;
+  border-radius: 9px !important;
+
+  // Fix centering — override Material's internal flex wrapper
+  ::ng-deep .mat-mdc-button-persistent-ripple,
+  ::ng-deep .mat-mdc-button-touch-target { display: none !important; }
+
+  ::ng-deep .mdc-button__label {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  mat-icon {
+    font-size: 16px !important;
+    width: 16px !important;
+    height: 16px !important;
+    line-height: 16px !important; // 👈 this is what actually centers the icon glyph
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+  }
+
+  &:hover {
+    background: #e9f1ff !important;
+    border-color: #9fc0f0 !important;
+    color: #1d4ed8 !important;
+  }
+  &.danger:hover {
+    background: #ffeef0 !important;
+    color: #dc2626 !important;
+    border-color: #f5b3ba !important;
+  }
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+
+.pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; border-top: 1px solid var(--border);
+}
+
+.page-btns { display: flex; gap: 6px; }
+
+.pg-btn {
+  min-width: 30px !important; width: 30px !important; height: 30px !important;
+  padding: 0 !important; font-size: 12px !important;
+  border-color: #d5e3f6 !important;
+  color: #2563eb !important;
+  background: #ffffff !important;
+  border-radius: 8px !important;
+  &:hover {
+    background: #eef5ff !important;
+    border-color: #a9c5ed !important;
+  }
+  &.current {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+  }
+}
+
+// ── Empty ─────────────────────────────────────────────────────────────────────
+
+.empty {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 40px; color: var(--muted);
+  mat-icon { font-size: 36px; width: 36px; height: 36px; margin-bottom: 10px; opacity: .4; }
+  p { font-size: 13px; }
+}
+.clickable-row {
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--bg4) !important;
+
+    .row-arrow {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}
+
+@keyframes nudge {
+  0%   { transform: translateX(0px); }
+  100% { transform: translateX(6px); }
+}
+
+.row-arrow {
+  opacity: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+  display: inline-block; // 👈 needed for transform to work
+}
+
+.table {
+  ::ng-deep {
+    // ... your existing ng-deep styles ...
+
+    .mat-mdc-row.clickable-row {
+      cursor: pointer;
+      transition: background 0.15s;
+
+      &:hover {
+        background: var(--bg4) !important;
+
+        .row-arrow {
+          opacity: 1;
+          animation: nudge 0.5s ease-in-out alternate infinite;
+        }
+      }
+    }
+  }
+}

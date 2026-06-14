@@ -1,53 +1,27 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './guards/auth.guard';
-
-import { LoginComponent } from './userpages/login/login';
-import { RegisterComponent } from './userpages/register/register';
-
+import { HomeComponent } from './features/home/home.component';
 import { DashboardComponent } from './userpages/dashboard/dashboard';
 import { PlannerComponent } from './userpages/planner/planner';
 import { SessionsComponent } from './userpages/sessions/sessions';
 import { GroupesComponent } from './userpages/groupes/groupes';
 import { StatistiquesComponent } from './userpages/statistiques/statistiques';
 import { ProfilComponent } from './userpages/profil/profil';
+import { ADMIN_ROUTES } from './admin/admin.routes';
+import { authGuard, roleGuard } from './features/auth/auth.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: '', component: HomeComponent },
 
-  { path: 'login', component: LoginComponent },
-  { path: 'register', component: RegisterComponent },
+  // any logged in user
+  { path: 'dashboard',    component: DashboardComponent,   canActivate: [authGuard] },
+  { path: 'planner',      component: PlannerComponent,     canActivate: [authGuard] },
+  { path: 'sessions',     component: SessionsComponent,    canActivate: [authGuard] },
+  { path: 'groupes',      component: GroupesComponent,     canActivate: [authGuard] },
+  { path: 'statistiques', component: StatistiquesComponent,canActivate: [authGuard] },
+  { path: 'profil',       component: ProfilComponent,      canActivate: [authGuard] },
 
-  {
-    path: 'dashboard',
-    canActivate: [authGuard],
-    component: DashboardComponent
-  },
-  {
-    path: 'planner',
-    canActivate: [authGuard],
-    component: PlannerComponent
-  },
-  {
-    path: 'sessions',
-    canActivate: [authGuard],
-    component: SessionsComponent
-  },
-  {
-    path: 'groupes',
-    canActivate: [authGuard],
-    component: GroupesComponent
-  },
-  {
-    path: 'statistiques',
-    canActivate: [authGuard],
-    component: StatistiquesComponent
-  },
-  {
-    path: 'profil',
-    canActivate: [authGuard],
-    component: ProfilComponent
-  },
+  // admin only
+  ...ADMIN_ROUTES,
 
-  { path: '**', redirectTo: 'login' }
-  
+  { path: '**', redirectTo: '' }
 ];
