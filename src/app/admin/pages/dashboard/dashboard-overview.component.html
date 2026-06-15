@@ -37,30 +37,7 @@
     </div>
 
     <!-- Health panel -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Platform health</div>
-      </div>
 
-      <div class="health-grid">
-        <div class="metric" *ngFor="let m of healthMetrics">
-          <div class="metric-val" [style.color]="m.color">{{ m.value }}</div>
-          <div class="metric-lbl">{{ m.label }}</div>
-        </div>
-      </div>
-
-      <mat-divider class="divider"></mat-divider>
-
-      <div class="card-title" style="font-size:13.5px;margin-bottom:14px">Top subjects</div>
-      <div class="subject-list">
-        <div class="subj-row" *ngFor="let s of subjects">
-          <span class="subj-name">{{ s.name }}</span>
-          <mat-progress-bar mode="determinate" [value]="s.pct" class="subj-bar" [style.--c]="s.color"></mat-progress-bar>
-          <span class="subj-pct">{{ s.pct }}%</span>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Bottom row -->
   <div class="row row-2">
