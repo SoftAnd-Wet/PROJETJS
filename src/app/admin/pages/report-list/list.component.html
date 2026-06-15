@@ -1,89 +1,89 @@
 <div class="page">
 
-  <!-- Summary row -->
+  <!-- Résumé -->
   <div class="summary-row">
     <div class="summary-item flagged">
       <mat-icon>flag</mat-icon>
-      <span>{{ flaggedCount() }} need action</span>
+      <span>{{ flaggedCount() }} nécessitent une action</span>
     </div>
     <div class="summary-item reviewing">
       <mat-icon>manage_search</mat-icon>
-      <span>{{ reviewingCount() }} under review</span>
+      <span>{{ reviewingCount() }} en cours d'examen</span>
     </div>
   </div>
 
-  <!-- Filter bar -->
+  <!-- Barre de filtres -->
   <div class="filter-bar">
     <select class="sel"
             [value]="statusFilter()"
             (change)="setFilter($any($event.target).value)">
-      <option value="all">All reports ({{ data.reports().length }})</option>
-      <option value="flagged">Flagged</option>
-      <option value="reviewing">Under review</option>
-      <option value="resolved">Resolved</option>
+      <option value="all">Tous les rapports ({{ data.reports().length }})</option>
+      <option value="flagged">Signalés</option>
+      <option value="reviewing">En cours d'examen</option>
+      <option value="resolved">Résolus</option>
     </select>
 
     <input class="search-input"
-           placeholder="Search by ID, user or content..."
+           placeholder="Rechercher par ID, utilisateur ou contenu..."
            [value]="searchQuery()"
            (input)="setSearch($any($event.target).value)" />
 
-    <span class="count">{{ filtered().length }} shown</span>
+    <span class="count">{{ filtered().length }} affichés</span>
   </div>
 
-  <!-- Report cards -->
+  <!-- Cartes de rapports -->
   <div class="reports-list">
     <div class="report-card" *ngFor="let r of filtered()">
       <div class="report-head">
         <div class="type-icon" [class]="r.type">
           <mat-icon>{{
-            r.type === 'session_title' ? 'menu_book' :
-            r.type === 'chat_message'  ? 'chat' :
-            r.type === 'group_title'   ? 'group' : 'person'
-          }}</mat-icon>
+              r.type === 'session_title' ? 'menu_book' :
+                r.type === 'chat_message'  ? 'chat' :
+                  r.type === 'group_title'   ? 'group' : 'person'
+            }}</mat-icon>
         </div>
         <div class="report-meta-block">
           <div class="report-title">
-            {{ r.type === 'group_title' ? 'Inappropriate group title'
-             : r.type === 'session_title' ? 'Inappropriate session title'
-             : r.type === 'chat_message' ? 'Offensive chat message'
-             : 'Inappropriate username' }}
+            {{ r.type === 'group_title'   ? 'Titre de groupe inapproprié'
+            : r.type === 'session_title' ? 'Titre de session inapproprié'
+              : r.type === 'chat_message'  ? 'Message de chat offensant'
+                : 'Nom d\'utilisateur inapproprié' }}
             <span class="report-id">#{{ r.id }}</span>
           </div>
           <div class="report-meta">
-            Target: <strong>{{ r.reportedTarget }}</strong> ·
+            Cible : <strong>{{ r.reportedTarget }}</strong> ·
             {{ r.date }} ·
-            <span class="offense-count">{{ r.offenseCount }} offense(s)</span>
+            <span class="offense-count">{{ r.offenseCount }} infraction(s)</span>
           </div>
         </div>
         <app-status-chip [status]="r.status" />
       </div>
 
-      <strong>Inappropriate content detected:</strong> "{{ r.contentSnapshot }}" · keyword: <strong>{{ r.matchedKeyword }}</strong>
+      <strong>Contenu inapproprié détecté :</strong> "{{ r.contentSnapshot }}" · mot-clé : <strong>{{ r.matchedKeyword }}</strong>
 
       <div class="report-actions">
         <button mat-stroked-button class="act-btn"
                 (click)="update(r.id, 'reviewing')"
                 [disabled]="r.status === 'reviewing' || r.status === 'resolved'">
-          <mat-icon>manage_search</mat-icon> Review
+          <mat-icon>manage_search</mat-icon> Examiner
         </button>
         <button mat-stroked-button class="act-btn"
                 (click)="update(r.id, 'resolved')"
                 [disabled]="r.status === 'resolved'">
-          <mat-icon>check_circle_outline</mat-icon> Resolve
+          <mat-icon>check_circle_outline</mat-icon> Résoudre
         </button>
         <button mat-stroked-button class="act-btn danger"
                 (click)="ban(r.reportedUserId, r.id)"
                 [disabled]="r.status === 'resolved'"
-                matTooltip="Suspend user and resolve report">
-          <mat-icon>block</mat-icon> Ban
+                matTooltip="Suspendre l'utilisateur et résoudre le rapport">
+          <mat-icon>block</mat-icon> Bannir
         </button>
       </div>
     </div>
 
     <div class="empty" *ngIf="filtered().length === 0">
       <mat-icon>check_circle</mat-icon>
-      <p>No reports in this category.</p>
+      <p>Aucun rapport dans cette catégorie.</p>
     </div>
   </div>
 
